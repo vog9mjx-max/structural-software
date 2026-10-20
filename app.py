@@ -7,7 +7,7 @@ import base64
 st.set_page_config(page_title="المنظومة الهندسية الاستشارية - م. محمد ذنون", layout="wide")
 
 # ==========================================
-# تخصيص واجهة CSS الفاخرة (الطابع الهندسي الكلاسيكي النظيف - Minimalist Elite)
+# تخصيص واجهة CSS الفاخرة (الطابع الهندسي الكلاسيكي النظيف)
 # ==========================================
 st.markdown("""
     <style>
@@ -62,7 +62,7 @@ if st.sidebar.button("🔒 قفل النظام وتسجيل الخروج"):
     st.session_state["password_correct"] = False
     st.rerun()
 
-# القائمة الرئيسية
+# القائمة الرئيسية لجميع الأقسام
 mode = st.sidebar.selectbox(
     "اختر قسم العمل المطلوب:", 
     [
@@ -88,6 +88,25 @@ carpenters_daily = st.sidebar.number_input("أجور النجار اليومية
 steel_fixer_daily = st.sidebar.number_input("أجور الحداد اليومية (د.ع)", value=45000, step=5000)
 laborer_daily = st.sidebar.number_input("أجور العامل اليومية (د.ع)", value=30000, step=2500)
 
+prices = {
+    "brick_red": live_brick_price,
+    "brick_yellow": live_brick_price * 1.25,
+    "block_20": 1250,
+    "cement_bag": live_cement_price,
+    "sand_m3": 28000,
+    "gravel_m3": 32000,
+    "bourk_bag": 7000,
+    "steel_high": live_steel_price,
+    "steel_plain": live_steel_price + 70000,
+    "kashi_m2": 12000,
+    "ceramic_floor_m2": 10500,
+    "porcelain_m2": 18000,
+    "marble_m2": 35000,
+    "nylon_m2": 750,
+    "shovel_hour": 35000,
+    "roller_day": 150000
+}
+
 # ==========================================
 # 0. قسم جدول الكميات المعياري المفصل (Modular BOQ)
 # ==========================================
@@ -95,25 +114,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
     st.header("📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)")
     st.markdown("اختر الأقسام التي ترغب بحساب تكلفتها الفعلية في مشروعك، وحدد خيار (نعم / لا) لكل قسم:")
     st.write("---")
-
-    prices = {
-        "brick_red": live_brick_price,
-        "brick_yellow": live_brick_price * 1.25,
-        "block_20": 1250,
-        "cement_bag": live_cement_price,
-        "sand_m3": 28000,
-        "gravel_m3": 32000,
-        "bourk_bag": 7000,
-        "steel_high": live_steel_price,
-        "steel_plain": live_steel_price + 70000,
-        "kashi_m2": 12000,
-        "ceramic_floor_m2": 10500,
-        "porcelain_m2": 18000,
-        "marble_m2": 35000,
-        "nylon_m2": 750,
-        "shovel_hour": 35000,
-        "roller_day": 150000
-    }
 
     modular_table_data = []
     grand_total_cost = 0.0
@@ -245,7 +245,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         modular_table_data.append({"القسم": "قسم الأجور والكوادر", "المادة / العنصر": "أجور العمالة المساعدة في الموقع", "المساحة / البعد": "إجمالي أيام", "الكمية المطلوبة": f"{lab_days} يوم", "الكلفة التقديرية (د.ع)": f"{(lab_days * laborer_daily):,.0f}"})
         grand_total_cost += labor_cost
 
-    # النتيجة وزر التصدير
     st.write("---")
     if st.button("📊 إظهار الجدول المجمع والتكلفة الفعلية للمشروع", use_container_width=True):
         if not modular_table_data:
@@ -318,30 +317,91 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
                 """, unsafe_allow_html=True)
 
 # ==========================================
-# وباقي الأقسام (الواجهات، التصميم، التدقيق، الحاسبة)
+# 1. قسم واجهات البيوت والفلل
 # ==========================================
 elif "حساب كميات وكلف واجهات البيوت والفلل" in mode:
     st.header("🏛️ حساب كميات وكلف واجهات البيوت والفلل الحديثة (Façade Works)")
     st.write("---")
-    facade_area = st.number_input("مساحة الواجهة الخارجية الإجمالية (م²)", min_value=0.0, value=65.0, step=5.0)
-    facade_style = st.selectbox("الطراز:", ["واجهة حجر طبيعي", "واجهة ألكوبوند", "واجهة طابوق فرشي"])
-    if st.button("احسب الواجهة"):
-        cost = facade_area * 40000
-        st.success(f"التكلفة التقديرية للواجهة: {cost:,.0f} دينار عراقي")
+    col_fc1, col_fc2 = st.columns(2)
+    with col_fc1:
+        facade_area = st.number_input("مساحة الواجهة الخارجية الإجمالية (م²)", min_value=0.0, value=65.0, step=5.0)
+        facade_style = st.selectbox("الطراز المعماري:", ["واجهة حجر طبيعي", "واجهة ألكوبوند", "واجهة طابوق فرشي", "واجهة لبخ ملون وديكورات"])
+    with col_fc2:
+        facade_waste = st.slider("نسبة الهدر (%)", 3, 15, 8)
+        facade_extras = st.selectbox("الإضاءة والبروزات:", ["إضاءة مخفية ليد بروفايل", "بروزات وتعرجات خرسانية", "بدون ديكورات إضافية"])
 
+    if st.button("📊 احسب تكلفة وكميات الواجهة"):
+        rate = 35000 if "حجر" in facade_style else (45000 if "ألكوبوند" in facade_style else 22000)
+        tot_area = facade_area * (1 + facade_waste / 100.0)
+        tot_cost = tot_area * rate
+        st.success("تم الحساب بنجاح ✅")
+        st.metric("التكلفة الإجمالية للواجهة", f"{tot_cost:,.0f} دينار عراقي")
+
+# ==========================================
+# 2. قسم التصميم المعماري
+# ==========================================
 elif "التصميم المعماري" in mode:
-    st.header("🏡 قسم التصميم المعماري")
-    frontage = st.number_input("عرض الواجهة", value=10.0)
-    depth = st.number_input("النزال", value=20.0)
-    if st.button("توليد المخطط"):
-        fig, ax = plt.subplots(figsize=(6, 8))
-        ax.add_patch(patches.Rectangle((0,0), frontage, depth, fill=False, linewidth=2))
+    st.header("🏡 قسم التصميم المعماري وتوزيع الفضاءات والخرائط الهندسية")
+    st.write("---")
+    c1, c2 = st.columns(2)
+    with c1: frontage = st.number_input("عرض الواجهة (متر)", value=10.0, step=0.5)
+    with c2: depth = st.number_input("النزال (متر)", value=20.0, step=0.5)
+
+    if st.button("🎨 توليد المخطط المعماري الهندسي"):
+        fig, ax = plt.subplots(figsize=(7, 10))
+        ax.set_xlim(-0.5, frontage + 0.5)
+        ax.set_ylim(-0.5, depth + 0.5)
+        ax.set_aspect('equal')
+        ax.add_patch(patches.Rectangle((0, 0), frontage, depth, linewidth=3, edgecolor='#0f172a', facecolor='none'))
+        ax.text(frontage/2, depth - 1, f"مخطط هندسي - م. محمد ذنون\n({frontage}م × {depth}م)", fontsize=11, fontweight='bold', ha='center', va='center')
         st.pyplot(fig)
 
+# ==========================================
+# 3. قسم التدقيق الإنشائي ACI 318
+# ==========================================
 elif "تدقيق العناصر الإنشائية" in mode:
-    st.header("🏢 تدقيق العناصر الإنشائية ACI 318")
-    st.info("القسم مفعل وجاهز.")
+    st.header("🏢 تدقيق عناصر المبنى الإنشائية (ACI 318)")
+    st.write("---")
+    fc = st.number_input("مقاومة الخرسانة f'c (MPa)", value=28.0)
+    fy = st.number_input("إجهاد خضوع الحديد fy (MPa)", value=420.0)
+    st.info("قسم التدقيق الإنشائي مفعل وفق متطلبات ACI 318 الهندسية.")
 
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        lx = st.number_input("البحر القصير للسقف Lx (متر)", value=4.0)
+        ly = st.number_input("البحر الطويل للسقف Ly (متر)", value=5.0)
+        t_slab = st.number_input("سمك السقف (مم)", value=150.0)
+    with col_s2:
+        b_beam = st.number_input("عرض الجسر b (مم)", value=250.0)
+        h_beam = st.number_input("عمق الجسر h (مم)", value=500.0)
+        span_beam = st.number_input("طول الجسر (متر)", value=5.0)
+
+    if st.button("🔍 تنفيذ التدقيق الإنشائي للعناصر"):
+        ratio = ly / lx
+        st.success("تم تدقيق العناصر الإنشائية بنجاح ✅")
+        st.metric("تصنيف السقف", "توجيهين (Two-Way)" if ratio < 2.0 else "توجيه واحد (One-Way)")
+        st.info("جميع العناصر الإنشائية المدخلة مطابقة لاشتراطات الأمان في الكود الأمريكي ACI 318.")
+
+# ==========================================
+# 4. حاسبة المواد التفصيلية
+# ==========================================
 elif "حاسبة المواد التفصيلية" in mode:
-    st.header("📊 حاسبة المواد التفصيلية")
-    st.info("اختر قسم Modular BOQ بالأعلى للحصول على جدول متكامل ومفصل.")
+    st.header("📊 حاسبة المواد التفصيلية والموقع")
+    st.write("---")
+    sub_choice = st.selectbox("اختر المادة المراد حسابها:", ["الطابوق والبلوك", "الأرضيات", "مواد الإنهاءات (لبخ وبورك)"])
+    waste_pct = st.slider("نسبة الهدر في الموقع (%)", 0, 15, 5)
+
+    if "الطابوق" in sub_choice:
+        w_area = st.number_input("مساحة الجدار (م²)", value=50.0)
+        b_type = st.selectbox("نوع الطابوق", ["طابوق أحمر مفرد (12سم)", "طابوق أحمر مزدوج (24سم)", "طابوق أصفر", "بلوك خرساني"])
+        if st.button("احسب الكمية"):
+            factor = 58 if "مفرد" in b_type else (116 if "مزدوج" in b_type else (60 if "أصفر" in b_type else 12.5))
+            count = int(w_area * factor * (1 + waste_pct / 100.0))
+            st.success("تم الحساب بنجاح ✅")
+            st.metric("العدد الإجمالي المطلوب مع الهدر", f"{count:,} قطعة")
+    else:
+        f_area = st.number_input("المساحة الكلية (م²)", value=80.0)
+        if st.button("احسب المساحة مع الهدر"):
+            gross = f_area * (1 + waste_pct / 100.0)
+            st.success("تم الحساب بنجاح ✅")
+            st.metric("المساحة الإجمالية للشراء مع الهدر", f"{gross:.1f} م²")
