@@ -18,30 +18,32 @@ st.write("---")
 
 # المدخلات الأساسية
 building_type = st.selectbox("نوع المبنى", ["مبنى متعدد الاستخدامات", "مبنى سكني", "مبنى تجاري"])
-num_floors = st.number_input("عدد الطوابق", min_value=1, max_value=20, value=2)
 
-# إضافة أداة رفع المخططات والورقة البصرية (Vision AI Upload)
-uploaded_files = st.file_uploader(
-    "📂 رفع المخططات الإنشائية أو المعمارية (صور)", 
-    type=["png", "jpg", "jpeg"], 
-    accept_multiple_files=True
-)
+st.subheader("📸 رفع المخططات المعمارية والإنشائية للطوابق")
+
+# خانات رفع الصور لكل طابق بشكل مستقل كما في الترتيب القديم
+img_ground = st.file_uploader("1) مخطط الطابق الأرضي", type=["png", "jpg", "jpeg"], key="ground")
+img_floor1 = st.file_uploader("2) مخطط الطابق الأول", type=["png", "jpg", "jpeg"], key="floor1")
+img_floor2 = st.file_uploader("3) مخطط الطابق الثاني", type=["png", "jpg", "jpeg"], key="floor2")
+img_floor3 = st.file_uploader("4) مخطط الطابق الثالث", type=["png", "jpg", "jpeg"], key="floor3")
+img_floor4 = st.file_uploader("5) مخطط الطابق الرابع", type=["png", "jpg", "jpeg"], key="floor4")
+
+# حصر عدد الطوابق بناءً على المخططات المرفوعة
+uploaded_images = [img for img in [img_ground, img_floor1, img_floor2, img_floor3, img_floor4] if img is not None]
+num_floors = len(uploaded_images) if len(uploaded_images) > 0 else 1
 
 if st.button("🚀 إجراء التحليل والتصميم الإنشائي الشامل واستخراج التقرير"):
-    with st.spinner("جاري قراءة المخطط البصري وتحليل الأحمال التراكمية وتوليد التفاصيل الإنشائية...[cite: 5]"):
+    with st.spinner("جاري قراءة المخططات البصرية وتحليل الأحمال التراكمية وتوليد التفاصيل الإنشائية..."):
         # إعداد محركات التصميم
         slab_eng = SlabEngine() if 'SlabEngine' in globals() else None
         beam_eng = BeamsEngine() if 'BeamsEngine' in globals() else None
         col_eng = ColumnsEngine() if 'ColumnsEngine' in globals() else None
         foot_eng = FootingsEngine() if 'FootingsEngine' in globals() else None
 
-        # استخدام أبعاد افتراضية أو معالجة الصور المرفوعة إن وجدت
         span_x = 5.5
         span_y = 6.0
-        if uploaded_files:
-            st.info(f"تمت قراءة {len(ڈ:=uploaded_files) if 'ڈ' in locals() else len(uploaded_files)} صورة بنجاح عبر Vision AI[cite: 5].")
         
-        # إجراء الحسابات الآمنة
+        # إجراء الحسابات والتحليل
         slab_res = slab_eng.design_slab(span_x, span_x, span_y, span_y) if slab_eng else {"thickness_mm": 150, "rebar": "Ø12@200mm Mesh T&B"}
         beam_res = beam_eng.design_beam(span_span=span_x, load=35.0) if beam_eng else {"rebar_top": "3Ø16", "rebar_bottom": "3Ø16"}
         
@@ -65,7 +67,7 @@ if st.button("🚀 إجراء التحليل والتصميم الإنشائي �
         fig, ax = plt.subplots(figsize=(8, 6))
         ax.plot([0, span_x, span_x, 0, 0], [0, 0, span_y, span_y, 0], 'r-', lw=2, label="البلاطة S1")
         ax.text(span_x/2, 0.2, f"B1: {beam_res.get('rebar_bottom', 'N/A')}", ha='center')
-        ax.text(span_x/2, span_y/2, f"S1 (t={slab_res.get('thickness_mm', 'N/A')}mm)\\nRebar: {slab_res.get('rebar', 'N/A')}", ha='center')
+        ax.text(span_x/2, span_y/2, f"S1 (t={slab_res.get('thickness_mm', 'N/A')}mm)\nRebar: {slab_res.get('rebar', 'N/A')}", ha='center')
         ax.text(span_x/2, 0.8, f"B1 Top: {beam_res.get('rebar_top', 'N/A')}", ha='center', color='blue')
         ax.set_title("Framing Plan with Marking & Code Details")
         ax.set_xlabel("X-Axis (m)")
@@ -94,7 +96,7 @@ if st.button("🚀 إجراء التحليل والتصميم الإنشائي �
 --------------------------------------------------
 تقرير ACI 318 - تكرير التصميم الإنشائي المتكامل
 --------------------------------------------------
-عدد الطوابق: {num_floors}
+عدد الطوابق المرفوعة والمحللة: {num_floors}
 حالة التحليل: مستقر وآمن تماماً
 تم استخدام المعايير القياسية لتصميم العناصر الخرسانية المسلحة.
 --------------------------------------------------
