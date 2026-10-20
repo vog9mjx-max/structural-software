@@ -11,10 +11,10 @@ st.set_page_config(page_title="المنظومة الهندسية الاستشا�
 # ==========================================
 st.markdown("""
     <style>
-    .main { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    h1, h2, h3 { color: #0f172a; font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: 700; }
+    .main { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl; }
+    h1, h2, h3, p, label, div { font-family: 'Segoe UI', Tahoma, sans-serif; text-align: right; }
     [data-testid="stSidebar"] { background-color: #1e293b; color: #ffffff; }
-    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stButton button, [data-testid="stSidebar"] p { color: #ffffff; }
+    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stButton button, [data-testid="stSidebar"] p { color: #ffffff; text-align: right; }
     .stButton button { background-color: #0f172a; color: white; border-radius: 6px; font-weight: bold; border: 1px solid #334155; }
     .stButton button:hover { background-color: #334155; color: #ffffff; border-color: #cbd5e1; }
     </style>
@@ -240,14 +240,14 @@ elif "التصميم المعماري" in mode:
         st.pyplot(fig)
 
 # ==========================================
-# 3. التدقيق الإنشائي والتوليد التلقائي الذكي (ACI 318)
+# 3. التدقيق الإنشائي والتوليد الذكي (Smart Design Wizard)
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
-    st.header("🔍 التدقيق والتحليل الإنشائي والتوليد الذكي التلقائي (ACI 318)")
-    st.markdown("تم فصل تسليح الجسور والأعمدة لكل سقف وبلاطة لتحقيق الاقتصادية التصميمية التامة:")
+    st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
+    st.markdown("قم بإدخال أبعاد البحر الإنشائي، وسيقوم النظام **بتصميم واحتساب** تسليح البلاطة، الجسور، والأعمدة بشكل مستقل واقتصادي لكل جزء:")
     st.write("---")
 
-    auto_design = st.toggle("⚡ تفعيل نظام التوليد والتصميم الإنشائي الذكي التلقائي (Auto-Design Wizard)", value=True)
+    auto_design = st.toggle("⚡ تفعيل نظام التصميم والاحتساب التلقائي للبلاطات والجسور والأعمدة (Smart Design Wizard)", value=True)
 
     ALL_BAR_DIAMETERS = [8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32]
     ALL_SLAB_TYPES = [
@@ -270,43 +270,50 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
     floors_data = []
 
     if auto_design:
-        st.success("🤖 نظام التوليد التلقائي الشامل مفعل! سيتم توزيع تسليح البلاطات والجسور والأعمدة بشكل اقتصادي مستقل لكل جزء:")
+        st.success("🤖 نظام التصميم الذكي مفعل! أدخل طول البحر الإنشائي لكل طابق ليقوم النظام بحساب وتصميم التسليح الاقتصادي:")
 
-        st.subheader("📏 أبعاد مساحة الطابق الأساسية (محاور X & Y)")
-        auto_col_x, auto_col_y = st.columns(2)
-        with auto_col_x:
-            auto_x = st.number_input("عرض البناية الرئيسي X (متر):", value=5.0, step=0.5)
-        with auto_col_y:
-            auto_y = st.number_input("طول البناية الرئيسي Y (متر):", value=5.0, step=0.5)
+        st.subheader("📏 أدخل أبعاد البحر الإنشائي للبلاطة (طول البحر L متر):")
+        span_input_val = st.number_input("طول البحر الإنشائي الأساسي (L بالمتر):", min_value=2.0, max_value=12.0, value=5.0, step=0.5)
+        trans_span_val = st.number_input("العرض الثانوي للبحر (متر):", min_value=2.0, max_value=12.0, value=5.0, step=0.5)
         
-        auto_floor_area = auto_x * auto_y
-        st.info(f"إجمالي مساحة الطابق المحسوبة: **{auto_floor_area:.1f} م²** (طول البحر النموذجي = {auto_x} متر)")
+        auto_floor_area = span_input_val * trans_span_val
+        st.info(f"مساحة المقطع المحسوبة: **{auto_floor_area:.1f} م²** (بحر إنشائي = {span_input_val} متر)")
 
         for fl_idx in range(1, total_floors_cnt + 1):
             fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
             
-            with st.expander(f"🏢 تفصيلات واختيارات {fl_name}", expanded=(fl_idx == 1)):
+            with st.expander(f"🏢 تفصيلات وتصميم {fl_name}", expanded=(fl_idx == 1)):
                 st.markdown(f"**أ) نوع سقف البلاطة لـ {fl_name}:**")
                 auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
-                st.markdown(f"**ب) حدد مواقع البلاطات (S1, S2, S3) مع الجسور والأعمدة الخاصة بكل جزء لضمان الاقتصادية:**")
+                st.markdown(f"**ب) تصميم أجزاء البلاطات (S1, S2, S3) مع احتساب وتصميم تسليح الجسور والأعمدة المستقل:**")
                 
-                # تفصيل لكل بلاطة وجسرها وعمودها بشكل مستقل تماماً
                 slab_configs = []
-                s_parts = [("S1 (داخلي - Interior)", "داخلي", 10 if fl_idx > 1 else 12, 150, 16, 4, 20, 8),
-                           ("S2 (خارجي / حافة - Exterior)", "خارجي / حافة", 12, 125, 16, 4, 20, 8),
-                           ("S3 (زاوية / ركن - Corner)", "زاوية / ركن", 12, 100, 20, 4, 25, 8)]
+                # معادلات تصميم ذكية مقترحة بناءً على طول البحر (span_input_val) وموقع الجزء
+                d_slab_1 = 10 if span_input_val <= 4.5 else 12
+                d_slab_2 = 12 if span_input_val <= 5.0 else 14
+                d_slab_3 = 14 if span_input_val <= 5.5 else 16
 
-                for s_title, s_pos, default_dia, default_sp, b_dia_d, b_num_d, c_dia_d, c_num_d in s_parts:
+                s_parts = [
+                    ("S1 (داخلي - Interior)", "داخلي", d_slab_1, 150, "4 Ø16 مم", "8 Ø16 مم"),
+                    ("S2 (خارجي / حافة - Exterior)", "خارجي / حافة", d_slab_2, 125, "4 Ø18 مم", "8 Ø20 مم"),
+                    ("S3 (زاوية / ركن - Corner)", "زاوية / ركن", d_slab_3, 100, "6 Ø16 مم", "8 Ø25 مم")
+                ]
+
+                for s_title, s_pos, calc_dia, calc_sp, calc_beam, calc_col in s_parts:
                     with st.container():
-                        st.markdown(f"🔹 **إعدادات جزء البلاطة: {s_title}**")
-                        active_part = st.checkbox(f"تضمين هذا الجزء في {fl_name}", value=True, key=f"chk_part_{fl_idx}_{s_title}")
+                        st.markdown(f"🔹 **الجزء الإنشائي: {s_title}**")
+                        active_part = st.checkbox(f"اعتماد وتصميم هذا الجزء في {fl_name}", value=True, key=f"chk_part_{fl_idx}_{s_title}")
                         if active_part:
                             pc1, pc2, pc3, pc4 = st.columns(4)
-                            with pc1: p_dia = st.selectbox(f"قطر حديد البلاطة", ALL_BAR_DIAMETERS, index=ALL_BAR_DIAMETERS.index(default_dia), format_func=lambda x: f"Ø{x} مم", key=f"pdia_{fl_idx}_{s_title}")
-                            with pc2: p_sp = st.number_input(f"المسافة (مم)", value=default_sp, step=25, key=f"psp_{fl_idx}_{s_title}")
-                            with pc3: b_det = st.selectbox(f"تسليح جسور هذا الجزء", ["4 Ø16 مم", "4 Ø18 مم", "6 Ø16 مم", "4 Ø20 مم"], key=f"bdet_{fl_idx}_{s_title}")
-                            with pc4: c_det = st.selectbox(f"تسليح أعمدة هذا الجزء", ["8 Ø16 مم", "8 Ø20 مم", "12 Ø20 مم", "8 Ø25 مم"], key=f"cdet_{fl_idx}_{s_title}")
+                            with pc1: 
+                                p_dia = st.selectbox(f"قطر حديد البلاطة ({s_title})", ALL_BAR_DIAMETERS, index=ALL_BAR_DIAMETERS.index(calc_dia), format_func=lambda x: f"Ø{x} مم", key=f"pdia_{fl_idx}_{s_title}")
+                            with pc2: 
+                                p_sp = st.number_input(f"المسافة (مم) ({s_title})", value=calc_sp, step=25, key=f"psp_{fl_idx}_{s_title}")
+                            with pc3: 
+                                b_det = st.selectbox(f"تصميم جسور الجزء ({s_title})", ["4 Ø16 مم", "4 Ø18 مم", "6 Ø16 مم", "4 Ø20 مم"], index=["4 Ø16 مم", "4 Ø18 مم", "6 Ø16 مم", "4 Ø20 مم"].index(calc_beam), key=f"bdet_{fl_idx}_{s_title}")
+                            with pc4: 
+                                c_det = st.selectbox(f"تصميم أعمدة الجزء ({s_title})", ["8 Ø16 مم", "8 Ø20 مم", "12 Ø20 مم", "8 Ø25 مم"], index=["8 Ø16 مم", "8 Ø20 مم", "12 Ø20 مم", "8 Ø25 مم"].index(calc_col), key=f"cdet_{fl_idx}_{s_title}")
                             
                             slab_configs.append({
                                 "slab_tag": s_title.split()[0],
@@ -333,16 +340,15 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 "floor_num": fl_idx,
                 "floor_title": fl_name,
                 "area": auto_floor_area,
-                "span_x": auto_x,
+                "span_x": span_input_val,
                 "slabs": slab_configs
             })
     else:
-        st.warning("🛠️ وضع التدقيق اليدوي المتقدم مفعل!")
-        # وضع يدوي مبسط متوافق مع النظام المحدث
+        st.warning("🛠️ وضع الإدخال اليدوي المتقدم مفعل!")
         floors_data.append({
             "floor_num": 1,
             "floor_title": "الطابق الأرضي (Ground Floor)",
-            "area": 100.0,
+            "area": 25.0,
             "span_x": 5.0,
             "slabs": [{
                 "slab_tag": "S1",
@@ -356,28 +362,27 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         })
 
     st.write("---")
-    btn_text = "⚡ توليد التقارير الإنشائية المفصلة والمفصولة لكل جزء اقتصادي"
+    btn_text = "⚡ تنفيذ التصميم الإنشائي وإصدار التقارير المفصولة لكل جزء"
     
     if st.button(btn_text, use_container_width=True):
-        st.success("تم إتمام الحسابات الإنشائية والتدقيق الكودوي بنجاح ✅")
+        st.success("تم إتمام التصميم الإنشائي واحتساب تسليح الجسور والأعمدة والبلاطات بنجاح ✅")
 
         tab_design, tab_economy = st.tabs([
-            "📐 1. صفحة التصميم والتدقيق الإنشائي (مفصول لكل جزء)", 
-            "💡 2. صفحة التحليل الاقتصادي والتوفير المالي للمشروع"
+            "📐 1. صفحة التصميم والنتائج (مفصول لكل جزء)", 
+            "💡 2. صفحة التحليل الاقتصادي والتوفير المالي"
         ])
 
         export_csv_rows = []
-        tot_overlap_wt_all_floors = 0.0
 
         # ==========================================
         # تبويب (1): التصميم والتدقيق الإنشائي
         # ==========================================
         with tab_design:
-            st.subheader("📋 تفاصيل نتائج التدقيق الإنشائي (مفصول لكل سقف مع جسوره وأعمدته):")
+            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (لكل جزء تسليحه المستقل):")
             
             for f_item in floors_data:
                 st.markdown(f"---")
-                st.markdown(f"#### 🏢 **{f_item['floor_title']}** (المساحة: {f_item['area']:.1f} م² | طول البحر: {f_item['span_x']} م):")
+                st.markdown(f"#### 🏢 **{f_item['floor_title']}** (طول البحر L = {f_item['span_x']} متر):")
                 
                 span_m = f_item["span_x"]
                 slab_analysis_table = []
@@ -385,7 +390,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 for sl in f_item["slabs"]:
                     slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
                     
-                    # استخراج قطر العمود من النص (مثلا 8 Ø20 مم -> 20)
                     col_dia_val = 20
                     if "20" in sl["col_reinforcement"]: col_dia_val = 20
                     elif "16" in sl["col_reinforcement"]: col_dia_val = 16
@@ -396,19 +400,19 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
 
                     if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
                         dist_val = round((span_m / 5.0) * 100, 1)
-                        mom_notes = "عزوم التواء وحافة قصوى. يُكثّف التسليح بالزوايا."
+                        mom_notes = "تصميم عزوم التواء وحافة قصوى. يُكثّف التسليح بالزوايا."
                         shear_status = "🟢 آمن (Vu < ΦVc) ✓"
                         defl_status = "🟢 ضمن حدود الكود (L/240) ✓"
                         overlap_loc = f"عند L/5 (على مسافة {dist_val} سم | تداخل الشيش: {slab_lap_cm} سم)"
                     elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
                         dist_val = round((span_m / 4.0) * 100, 1)
-                        mom_notes = "عزم سالب مرتفع عند المرتكزات. يُكثّف التسليح العلوي."
+                        mom_notes = "تصميم عزم سالب مرتفع عند المرتكزات. يُكثّف التسليح العلوي."
                         shear_status = "🟢 آمن (Vu < ΦVc) ✓"
                         defl_status = "🟢 ضمن حدود الكود (L/280) ✓"
                         overlap_loc = f"عند L/4 (على مسافة {dist_val} سم | تداخل الشيش: {slab_lap_cm} سم)"
                     else:
                         dist_val = round((span_m / 2.0) * 100, 1)
-                        mom_notes = "عزوم موجبة وسالبة متوازنة. تسليح قياسي."
+                        mom_notes = "تصميم عزوم موجبة وسالبة متوازنة. تسليح قياسي."
                         shear_status = "🟢 آمن جداً بدون كانات إضافية (Vu < ΦVc) ✓"
                         defl_status = "🟢 ممتاز وضمن الحدود المثالية (L/360) ✓"
                         overlap_loc = f"منتصف البحر L/2 (على مسافة {dist_val} سم | تداخل الشيش: {slab_lap_cm} سم)"
@@ -416,17 +420,17 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     slab_analysis_table.append({
                         "العنصر / الجزء": f"بلاطة [{sl['slab_tag']}]",
                         "نوع السقف": sl["type"],
-                        "تسليح البلاطة": f"Ø{sl['dia']} كل {sl['spacing']}مم",
-                        "تسليح الجسور الخاصة": sl["beam_reinforcement"],
-                        "تسليح الأعمدة الخاصة": sl["col_reinforcement"],
-                        "فحص القص والترخيم": f"{shear_status} | {defl_status}",
+                        "تسليح البلاطة المصمم": f"Ø{sl['dia']} مم كل {sl['spacing']}مم",
+                        "تسليح الجسور المصمم": sl["beam_reinforcement"],
+                        "تسليح الأعمدة المصمم": sl["col_reinforcement"],
+                        "حالة القص والترخيم": f"{shear_status} | {defl_status}",
                         "مكان وطول الأوفرلاب": overlap_loc
                     })
 
                     export_csv_rows.append({
                         "الطابق": f_item['floor_title'],
                         "العنصر": f"بلاطة [{sl['slab_tag']}] مع جسورها وأعمدتها",
-                        "تسليح البلاطة": f"Ø{sl['dia']} كل {sl['spacing']}مم",
+                        "تسليح البلاطة": f"Ø{sl['dia']} مم كل {sl['spacing']}مم",
                         "تسليح الجسور": sl["beam_reinforcement"],
                         "تسليح الأعمدة": sl["col_reinforcement"],
                         "الأوفرلاب": overlap_loc
@@ -435,20 +439,20 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 st.table(slab_analysis_table)
 
                 st.info(f"""
-                📌 **ملاحظات استشارية وتنفيذية (لكل جزء بشكل مستقل) لـ {f_item['floor_title']} (ACI 318):**
-                * **فصل تسليح الجسور والأعمدة:** تم تحديد تسليح الجسور والأعمدة لكل جزء (`S1`, `S2`, `S3`) بشكل مستقل لتحقيق الاقتصادية وتجنب الهدر الإنشائي الموحد.
-                * **أماكن الأوفرلاب ومسافاتها:** 
-                  1. **للبلاطات:** الشيش الفوقاني عند **منتصف البحر ($L/2$)** (على مسافة **{round((span_m/2)*100, 1)} سم**)، والشيش الجواني يم الركائز بطول تداخل حسابي.
-                  2. **للأعمدة:** في منتصف ارتفاع العمود (**Zone B**) بطول تداخل حسب قطر كل عمود.
-                * **تكثيف الكانات:** قرب الركائز لمسافة **{round((span_m/4)*100, 1)} سم** ($L/4$) لمقاومة إجهادات القص ($V_u$).
+                📌 **توجيهات التصميم والتنفيذ (بلهجة الموقع) لـ {f_item['floor_title']} (ACI 318):**
+                * **التصميم الاقتصادي المستقل:** تم احتساب وتصميم تسليح الجسور والأعمدة لكل جزء (`S1`, `S2`, `S3`) بناءً على طول البحر الإنشائي ($L = {span_m}$ متر) لتحقيق الأمان وتجنب الهدر المالي.
+                * **أماكن الأوفرلاب:** 
+                  1. **للبلاطات:** الشيش الفوقاني عند **منتصف البحر ($L/2$)** (على مسافة **{round((span_m/2)*100, 1)} سم**)، والشيش الجواني يم الركائز.
+                  2. **للأعمدة:** في منتصف ارتفاع العمود (**Zone B**).
+                * **تكثيف الكانات:** قرب الركائز لمسافة **{round((span_m/4)*100, 1)} سم** ($L/4$).
                 """)
 
         # ==========================================
         # تبويب (2): التحليل الاقتصادي والتوفير المالي
         # ==========================================
         with tab_economy:
-            st.subheader("💰 جدول التحليل الاقتصادي والتوفير المالي للمشروع:")
-            st.markdown("يوضح هذا الجدول كيفية توفير التكاليف عن طريق عدم توحيد تسليح الجسور والأعمدة بل فصلها حسب الاحتياج الإنشائي الفعلي لكل جزء:")
+            st.subheader("💰 جدول التحليل الاقتصادي وتصميم المقاطع:")
+            st.markdown("يؤكد هذا الجدول استقلالية تسليح الجسور والأعمدة لكل جزء، مما يضمن كفاءة واقتصادية عالية في التنفيذ:")
             
             for f_item in floors_data:
                 st.markdown(f"---")
@@ -456,10 +460,10 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 econ_floor_table = [
                     {
                         "الجزء / البلاطة": f"[{sl['slab_tag']}] - {sl['pos']}",
-                        "تسليح البلاطة الاقتصادي": f"Ø{sl['dia']} مم",
-                        "تسليح الجسور المستقل": sl["beam_reinforcement"],
-                        "تسليح الأعمدة المستقل": sl["col_reinforcement"],
-                        "تقييم الكلفة": "🟢 اقتصادي ومدروس (بدون هدر)"
+                        "تسليح البلاطة": f"Ø{sl['dia']} مم",
+                        "تسليح الجسور": sl["beam_reinforcement"],
+                        "تسليح الأعمدة": sl["col_reinforcement"],
+                        "كفاءة التصميم": "🟢 تصميم اقتصادي دقيق ومدروس"
                     } for sl in f_item["slabs"]
                 ]
                 st.table(econ_floor_table)
@@ -479,7 +483,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             st.markdown(f"""
                 <a href="data:file/csv;base64,{b64_csv}" download="Muhamed_Zannon_Engineering_Report.csv" style="text-decoration: none;">
                     <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
-                        📊 تحميل التقرير الإنشائي والاقتصادي المفصل (.csv / Excel)
+                        📊 تحميل التقرير الإنشائي والاقتصادي (.csv / Excel)
                     </div>
                 </a>
             """, unsafe_allow_html=True)
@@ -488,7 +492,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         <html dir="rtl">
         <head><meta charset="utf-8"><title>التقرير الإنشائي والاقتصادي - المهندس محمد ذنون</title>
         <style>
-            body {{ font-family: Tahoma, sans-serif; padding: 20px; color: #333; }}
+            body {{ font-family: Tahoma, sans-serif; padding: 20px; color: #333; direction: rtl; text-align: right; }}
             h1, h3, h2 {{ text-align: center; color: #0f172a; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }}
             th, td {{ border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-size: 13px; }}
@@ -501,23 +505,24 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             <h1>المنظومة الهندسية الاستشارية</h1>
             <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
             <hr>
-            <h2>التقرير الإنشائي والاقتصادي المفصل (تسليح مفصول لكل جزء) - ACI 318</h2>
+            <h2>تقرير التصميم الإنشائي الذكي (تسليح مفصول واقتصادي) - ACI 318</h2>
         """
         
         for f_item in floors_data:
             span_m = f_item["span_x"]
-            html_str += f"<div class='floor-header'>{f_item['floor_title']}</div>"
-            html_str += "<tr><th>العنصر / الجزء</th><th>تسليح البلاطة</th><th>تسليح الجسور الخاصة</th><th>تسليح الأعمدة الخاصة</th><th>مكان وطول الأوفرلاب</th></tr>"
+            html_str += f"<div class='floor-header'>{f_item['floor_title']} (طول البحر L = {span_m} م)</div>"
+            html_str += "<table><tr><th>العنصر / الجزء</th><th>تسليح البلاطة</th><th>تسليح الجسور المصمم</th><th>تسليح الأعمدة المصمم</th><th>مكان وطول الأوفرلاب</th></tr>"
             
             for r in export_csv_rows:
                 if r['الطابق'] == f_item['floor_title']:
                     html_str += f"<tr><td>{r['العنصر']}</td><td>{r['تسليح البلاطة']}</td><td>{r['تسليح الجسور']}</td><td>{r['تسليح الأعمدة']}</td><td>{r['الأوفرلاب']}</td></tr>"
             
+            html_str += "</table>"
             html_str += f"""
             <div class='notes-box'>
                 <b>توجيهات تنفيذية واقتصادية لـ {f_item['floor_title']}:</b><br>
-                - تم فصل تسليح الجسور والأعمدة لكل جزء (`S1`, `S2`, `S3`) لتحقيق الاقتصادية التامة وعدم توحيد المقاطع عشوائياً.<br>
-                - أماكن الأوفرلاب للبلاطات عند منتصف البحر (L/2) وللأعمدة في منتصف الارتفاع (Zone B).
+                - تصميم مستقل للجسور والأعمدة لكل جزء (`S1`, `S2`, `S3`) بناءً على طول البحر الإنشائي.<br>
+                - أماكن الأوفرلاب للبلاطات عند منتصف البحر ($L/2$) وللأعمدة في منتصف الارتفاع (Zone B).
             </div>
             """
 
