@@ -244,7 +244,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
-    st.markdown("إدخال البيانات العامة، المساحة الإجمالية للطابق، وتخصيص أبعاد ومقاطع مستقلة لكل فضاء (S1, S2, S3) بحسب الواقع الإنشائي:")
+    st.markdown("إدخال البيانات العامة، المساحة الإجمالية للطابق، وتخصيص أبعاد ومقاطع مستقلة لكل فضاء (Interior, Exterior, Corner) بحسب الواقع الإنشائي:")
     st.write("---")
 
     ALL_BAR_DIAMETERS = [8, 10, 12, 14, 16, 18, 20, 22, 25]
@@ -276,8 +276,8 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             st.markdown(f"**أ) نوع سقف البلاطة الإجمالي لـ {fl_name}:**")
             auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
-            st.markdown(f"**ب) تخصيص الأبعاد ($X, Y$) والتسليح المستقل لكل فضاء (S1, S2, S3):**")
-            st.caption("✨ كل فضاء له أبعاد مستقلة (مثلاً فضاء واسع `X1, Y1` وفضاء أصغر `X2, Y2`) ليعطي تصميماً دقيقاً ومطابقاً للواقع الإنشائي.")
+            st.markdown(f"**ب) تخصيص الأبعاد ($X, Y$) والتسليح المستقل لكل فضاء (Interior, Exterior, Corner):**")
+            st.caption("✨ كل فضاء له أبعاد مستقلة ومخصصة بدقة تماثل الواقع الإنشائي للمبنى.")
             
             slab_configs = []
 
@@ -291,11 +291,11 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 def_col_n, def_col_d = 8, 20
                 def_beam_n, def_beam_d = 4, 18
 
-            # الفضاءات الثلاثة بأبعاد مستقلة قابلة للتعديل
+            # الفضاءات الثلاثة بأبعاد مستقلة ومسميات (Interior, Exterior, Corner)
             spaces_meta = [
-                ("S1", "B1", "C1", "فضاء داخلي رئيسي (مثل الاستقبال / صالة واسعة)", 5.0, 6.0, 1, 12, 150, 1, 10, 200, def_beam_n, def_beam_d, def_col_n, def_col_d),
-                ("S2", "B2", "C2", "فضاء خارجي / ثانوي (مثل غرفة نوم / مطبخ)", 4.0, 4.0, 1, 12, 125, 1, 12, 175, def_beam_n, def_beam_d, def_col_n, def_col_d),
-                ("S3", "B3", "C3", "فضاء زاوية / ركن (Corner Space)", 4.5, 5.0, 1, 14, 100, 1, 12, 150, 6, 16, 8, 25 if load_tier==1 else 20)
+                ("S1", "B1", "C1", "Interior (فضاء داخلي رئيسي / صالة)", 5.0, 6.0, 1, 12, 150, 1, 10, 200, def_beam_n, def_beam_d, def_col_n, def_col_d),
+                ("S2", "B2", "C2", "Exterior (فضاء خارجي / حافة)", 4.0, 4.0, 1, 12, 125, 1, 12, 175, def_beam_n, def_beam_d, def_col_n, def_col_d),
+                ("S3", "B3", "C3", "Corner (فضاء زاوية / ركن)", 4.5, 5.0, 1, 14, 100, 1, 12, 150, 6, 16, 8, 25 if load_tier==1 else 20)
             ]
 
             for s_tag, b_tag, c_tag, s_desc, def_x, def_y, def_bot_n, def_bot_d, def_sp, def_top_n, def_top_d, def_top_sp, def_bn, def_bd, def_cn, def_cd in spaces_meta:
@@ -384,7 +384,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     "beam_tag": "B1",
                     "col_tag": "C1",
                     "type": auto_stype,
-                    "desc": "فضاء داخلي",
+                    "desc": "Interior Space",
                     "space_x": 5.0,
                     "space_y": 5.0,
                     "space_area": 25.0,
@@ -444,7 +444,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     crank_d = round((max_s / 7.0) * 100, 1)
                     details_str = f"أبعاد الفضاء: X={sl['space_x']}م × Y={sl['space_y']}م (مساحة: {sl['space_area']}م²) | سفلي: {sl['bot_rebar']} لكل {sl['bot_spacing']}مم | علوي: {sl['top_rebar']} لكل {sl['top_spacing']}مم (تكسيح L/7 عند {crank_d}سم)"
                     
-                    status_str = "❌ غير آمن (يُرفض)" if sl["errors"] else ("🟡 مقبول مع تحظير" if sl["warnings"] else "🟢 آمن ومطابق ✓")
+                    status_str = "❌ غير آمن (يُرفض)" if sl["errors"] else ("🟡 مقبول مع تحذير" if sl["warnings"] else "🟢 آمن ومطابق ✓")
 
                     slabs_table.append({
                         "الرمز": sl["slab_tag"],
