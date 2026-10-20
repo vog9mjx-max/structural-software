@@ -244,7 +244,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 التدقيق والتحليل الإنشائي والتوليد الذكي التلقائي (ACI 318)")
-    st.markdown("تم تنظيم العمل في **صفحتين (تبويبين) منفصلتين** مع ملاحظات الأوفرلاب والتكثيف الإنشائي بالمفهوم العراقي الدقيق:")
+    st.markdown("تم تنظيم العمل في **صفحتين (تبويبين) منفصلتين** مع الحساب المباشر لمسافات الأوفرلاب بالمتر والسنتمتر بلهجة الموقع:")
     st.write("---")
 
     auto_design = st.toggle("⚡ تفعيل نظام التوليد والتصميم الإنشائي الذكي التلقائي (Auto-Design Wizard)", value=True)
@@ -275,12 +275,12 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         st.subheader("📏 أبعاد مساحة الطابق الأساسية (محاور X & Y)")
         auto_col_x, auto_col_y = st.columns(2)
         with auto_col_x:
-            auto_x = st.number_input("عرض البناية الرئيسي X (متر):", value=10.0, step=0.5)
+            auto_x = st.number_input("عرض البناية الرئيسي X (متر):", value=5.0, step=0.5)
         with auto_col_y:
-            auto_y = st.number_input("طول البناية الرئيسي Y (متر):", value=20.0, step=0.5)
+            auto_y = st.number_input("طول البناية الرئيسي Y (متر):", value=5.0, step=0.5)
         
         auto_floor_area = auto_x * auto_y
-        st.info(f"إجمالي مساحة الطابق المحسوبة: **{auto_floor_area:.1f} م²**")
+        st.info(f"إجمالي مساحة الطابق المحسوبة: **{auto_floor_area:.1f} م²** (اعتماد طول البحر النموذجي = {auto_x} متر)")
 
         for fl_idx in range(1, total_floors_cnt + 1):
             fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
@@ -323,6 +323,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 "floor_num": fl_idx,
                 "floor_title": fl_name,
                 "area": auto_floor_area,
+                "span_x": auto_x,
                 "slabs": auto_slabs,
                 "c_dia": col_d_auto,
                 "c_num": col_n_auto,
@@ -333,7 +334,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 "st_sp": 100
             })
     else:
-        st.warning("🛠️ وضع التدقيق اليدوي المتقدم مفعل! حدد مربعات مواقع السقوف (S1, S2, S3) وتفاصيل العناصر بنفسك.")
+        st.warning("🛠️ وضع التدقيق اليدوي المتقدم مفعل! حدد مربعات مواقع السقوف وتفاصيل العناصر بنفسك.")
         if "floor_segments" not in st.session_state:
             st.session_state.floor_segments = {}
 
@@ -344,14 +345,16 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 st.markdown(f"##### أ) مساحة المقطع لـ {fl_name}:")
                 seg_key = f"fl_seg_{fl_idx}"
                 if seg_key not in st.session_state.floor_segments:
-                    st.session_state.floor_segments[seg_key] = [{"x": 10.0, "y": 20.0}]
+                    st.session_state.floor_segments[seg_key] = [{"x": 5.0, "y": 5.0}]
 
                 fl_area = 0.0
+                span_val = 5.0
                 for s_i, seg in enumerate(st.session_state.floor_segments[seg_key]):
                     cx, cy = st.columns(2)
-                    with cx: st.session_state.floor_segments[seg_key][s_i]["x"] = st.number_input(f"عرض X_{s_i+1} (م):", value=seg["x"], step=0.5, key=f"x_{fl_idx}_{s_i}")
-                    with cy: st.session_state.floor_segments[seg_key][s_i]["y"] = st.number_input(f"طول Y_{s_i+1} (م):", value=seg["y"], step=0.5, key=f"y_{fl_idx}_{s_i}")
+                    with cx: st.session_state.floor_segments[seg_key][s_i]["x"] = st.number_input(f"عرض البحر X_{s_i+1} (م):", value=seg["x"], step=0.5, key=f"x_{fl_idx}_{s_i}")
+                    with cy: st.session_state.floor_segments[seg_key][s_i]["y"] = st.number_input(f"طول البحر Y_{s_i+1} (م):", value=seg["y"], step=0.5, key=f"y_{fl_idx}_{s_i}")
                     fl_area += st.session_state.floor_segments[seg_key][s_i]["x"] * st.session_state.floor_segments[seg_key][s_i]["y"]
+                    span_val = st.session_state.floor_segments[seg_key][s_i]["x"]
 
                 st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
 
@@ -409,6 +412,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     "floor_num": fl_idx,
                     "floor_title": fl_name,
                     "area": fl_area,
+                    "span_x": span_val,
                     "slabs": floor_slabs,
                     "c_dia": col_bar_d,
                     "c_num": col_bar_num,
@@ -441,8 +445,9 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             
             for f_item in floors_data:
                 st.markdown(f"---")
-                st.markdown(f"#### 🏢 **{f_item['floor_title']}** (المساحة: {f_item['area']:.1f} م² | عدد الأعمدة: {f_item['c_cnt']} | عدد الجسور: {f_item['b_cnt']}):")
+                st.markdown(f"#### 🏢 **{f_item['floor_title']}** (المساحة: {f_item['area']:.1f} م² | طول البحر النموذجي: {f_item['span_x']} م):")
                 
+                span_m = f_item["span_x"]
                 c_lap_cm = round(48 * f_item["c_dia"] / 10.0, 1)
                 c_unit_wt = (f_item["c_dia"]**2) / 162.0
                 f_col_lap_wt_kg = f_item["c_cnt"] * f_item["c_num"] * (c_lap_cm / 100.0) * c_unit_wt
@@ -452,21 +457,25 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 for sl in f_item["slabs"]:
                     slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
                     
+                    # الحساب المباشر للمسافة بالأمتار بناءً على طول البحر (span_m)
                     if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
+                        dist_val = round((span_m / 5.0) * 100, 1) # L/5
                         mom_notes = "عزوم التواء وحافة قصوى. يُكثّف التسليح بالزوايا."
                         shear_status = "🟢 آمن (Vu < ΦVc) ✓"
                         defl_status = "🟢 ضمن حدود الكود (L/240) ✓"
-                        overlap_loc = f"عند L/5 (طول {slab_lap_cm} سم)"
+                        overlap_loc = f"عند L/5 (على مسافة {dist_val} سم | طول التداخل الجر: {slab_lap_cm} سم)"
                     elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
+                        dist_val = round((span_m / 4.0) * 100, 1) # L/4
                         mom_notes = "عزم سالب مرتفع عند المرتكزات. يُكثّف التسليح العلوي."
                         shear_status = "🟢 آمن (Vu < ΦVc) ✓"
                         defl_status = "🟢 ضمن حدود الكود (L/280) ✓"
-                        overlap_loc = f"عند L/4 (طول {slab_lap_cm} سم)"
+                        overlap_loc = f"عند L/4 (على مسافة {dist_val} سم | طول التداخل الجر: {slab_lap_cm} سم)"
                     else:
+                        dist_val = round((span_m / 2.0) * 100, 1) # L/2
                         mom_notes = "عزوم موجبة وسالبة متوازنة. تسليح قياسي."
                         shear_status = "🟢 آمن جداً بدون كانات إضافية (Vu < ΦVc) ✓"
                         defl_status = "🟢 ممتاز وضمن الحدود المثالية (L/360) ✓"
-                        overlap_loc = f"منتصف البحر L/2 ({slab_lap_cm} سم)"
+                        overlap_loc = f"منتصف البحر L/2 (على مسافة {dist_val} سم | طول التداخل الجر: {slab_lap_cm} سم)"
 
                     slab_analysis_table.append({
                         "التسمية والموقع": f"[{sl['slab_tag']}]",
@@ -475,7 +484,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
                         "فحص القص": shear_status,
                         "فحص الترخيم": defl_status,
-                        "الأوفرلاب": overlap_loc,
+                        "الأوفرلاب ومكانه": overlap_loc,
                         "تحليل العزوم": mom_notes
                     })
 
@@ -487,7 +496,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
                         "القص": shear_status,
                         "الترخيم": defl_status,
-                        "مكان الأوفرلاب": overlap_loc
+                        "مكان وطول الأوفرلاب": overlap_loc
                     })
 
                 st.table(slab_analysis_table)
@@ -497,25 +506,25 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     {
                         "العنصر الإنشائي": f"الأعمدة ({f_item['c_cnt']} عمود)",
                         "التسليح": f"{f_item['c_num']} Ø{f_item['c_dia']}",
-                        "تفاصيل القص والأوفرلاب": f"منتصف العمود | الطول: {c_lap_cm} سم | الوزن: {f_col_lap_wt_kg:.1f} كغم",
+                        "تفاصيل القص والأوفرلاب": f"منتصف العمود (Zone B) | طول التداخل: {c_lap_cm} سم | الوزن: {f_col_lap_wt_kg:.1f} كغم",
                         "الحالة": "🟢 مطابق للمواصفات ACI 318 ✓"
                     },
                     {
                         "العنصر الإنشائي": f"الجسور ({f_item['b_cnt']} جسر)",
                         "التسليح والكانات": f"{f_item['b_num']} Ø{f_item['b_dia']} | كانات كل {f_item['st_sp']}مم",
-                        "تفاصيل القص والأوفرلاب": f"تكثيف الكانات قرب المرتكزات لمقاومة القص الحرج | الطول: {b_lap_cm} سم",
+                        "تفاصيل القص والأوفرلاب": f"تكثيف الكانات قرب المرتكزات لمقاومة القص الحرج | طول التداخل: {b_lap_cm} سم",
                         "الحالة": "🟢 القص والترخيم آمن ✓"
                     }
                 ]
                 st.table(cb_table)
 
-                # 💡 الملاحظات بالتعبير العراقي الهندسي الواضح مع الحفاظ على القوانين الحسابية والرموز (L/2, Zone B, إلخ)
+                # 💡 التوجيهات الهندسية مع الحساب المباشر للمسافات بلهجة الموقع العراقية
                 st.info(f"""
-                📌 **ملاحظات استشارية وتوجيهات تنفيذية بلهجة الموقع لـ {f_item['floor_title']} (ACI 318):**
-                * **أماكن الأوفرلاب (الربط والتداخل للشيش):** 
-                  1. **للسقوف والبلاطات (السحب والجسور الدفنة):** الشيش الفوقاني (العلوي) ينربط ويتداخل بـ **منتصف البحر ($L/2$)** (يعني بالنص بين الركائز لأن العزم قليل)، بينما الشيش الجواني (السفلي) ينربط يم الركائز (الأعمدة أو مساند الجسور) بطول تداخل حسابي لا يقل عن ($40 \\times$ قطر الشيش).
-                  2. **للأعمدة والجسور (الركائز الرأسية والأفقيّة):** الشيش مال الأعمدة ينربط ويصير بيه أوفرلاب بـ **منتصف ارتفاع العمود (Zone B)** (ابتعاداً عن منطقة الاتصال بالسقف والأساس لأن العزوم هناك تكون قصوى)، وبطول تداخل حسابي ($48 \\times$ قطر الشيش).
-                * **تكثيف الكانات (الشتار / الأربطة):** ضروري جداً تكثيف الكانات بالقرب من مساند الجسور والأعمدة (الركائز) لمسافة لا تقل عن ($L/4$ أو أكبر أبعاد المقطع) حتى نضمن مقاومة قوية لإجهادات القص العالية ($V_u$ وما تطلع فطور بالكونكريت).
+                📌 **ملاحظات استشارية وتوجيهات تنفيذية (حسابات الأوفرلاب المباشرة) لـ {f_item['floor_title']} (ACI 318):**
+                * **أماكن الأوفرلاب ومسافاتها الحسابية:** 
+                  1. **للسقوف والبلاطات:** الشيش الفوقاني ينربط بـ **منتصف البحر ($L/2$)** (يعني على مسافة **{round((span_m/2)*100, 1)} سم** من وجه الركيزة)، أما الشيش الجواني فينربط يم الركائز (الأعمدة والمساند) بطول تداخل (جرّ) يبلغ **{round(40 * f_item['slabs'][0]['dia'] / 10.0, 1)} سم**.
+                  2. **للأعمدة والجسور:** الأوفرلاب مال الأعمدة يصير بـ **منتصف ارتفاع العمود (Zone B)**، وبطول تداخل يبلغ **{c_lap_cm} سم**.
+                * **تكثيف الكانات (الشتار / الأربطة):** ضروري تكثيف الكانات قرب الركائز لمسافة **{round((span_m/4)*100, 1)} سم** ($L/4$) لضمان مقاومة إجهادات القص العالية ($V_u$).
                 """)
 
         # ==========================================
@@ -577,9 +586,9 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
 
         col_dl_x, col_dl_p = st.columns(2)
         
-        csv_str = "الطابق,التسمية,النوع,المواقع,التسليح,القص,الترخيم,مكان الأوفرلاب\n"
+        csv_str = "الطابق,التسمية,النوع,المواقع,التسليح,القص,الترخيم,مكان وطول الأوفرلاب\n"
         for r in export_csv_rows:
-            csv_str += f"{r['الطابق']},{r['التسمية']},{r['النوع']},{r['المواقع']},{r['التسليح']},{r['القص']},{r['الترخيم']},{r['مكان الأوفرلاب']}\n"
+            csv_str += f"{r['الطابق']},{r['التسمية']},{r['النوع']},{r['المواقع']},{r['التسليح']},{r['القص']},{r['الترخيم']},{r['مكان وطول الأوفرلاب']}\n"
         
         b64_csv = base64.b64encode(csv_str.encode('utf-8-sig')).decode()
         with col_dl_x:
@@ -613,19 +622,11 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         
         for f_item in floors_data:
             html_str += f"<div class='floor-header'>{f_item['floor_title']}</div>"
-            html_str += "<table><tr><th>التسمية</th><th>النوع</th><th>المواقع</th><th>التسليح</th><th>تدقيق القص</th><th>تدقيق الترخيم</th><th>مكان وطول الأوفرلاب</th></tr>"
+            html_str += "<table><tr><th>التسمية</th><th>النوع</th><th>المواقع</th><th>التسليح</th><th>تدقيق القص</th><th>تدقيق الترخيم</th><th>مكان وطول الأوفرلاب والحسابات</th></tr>"
             for r in export_csv_rows:
                 if r['الطابق'] == f_item['floor_title']:
-                    html_str += f"<tr><td>{r['التسمية']}</td><td>{r['النوع']}</td><td>{r['المواقع']}</td><td>{r['التسليح']}</td><td>{r['القص']}</td><td>{r['الترخيم']}</td><td>{r['مكان الأوفرلاب']}</td></tr>"
+                    html_str += f"<tr><td>{r['التسمية']}</td><td>{r['النوع']}</td><td>{r['المواقع']}</td><td>{r['التسليح']}</td><td>{r['القص']}</td><td>{r['الترخيم']}</td><td>{r['مكان وطول الأوفرلاب']}</td></tr>"
             html_str += "</table>"
-            html_str += f"""
-            <div class='notes-box'>
-                <b>ملاحظات استشارية وتنفيذية (بلهجة الموقع) لـ {f_item['floor_title']}:</b><br>
-                - أماكن الأوفرلاب للبلاطات: الشيش الفوقاني بمنتصف البحر ($L/2$) والجواني يم الركائز.<br>
-                - أماكن الأوفرلاب للأعمدة: في منتصف ارتفاع العمود (Zone B) بطول تداخل ($48 \\times$ قطر الشيش).<br>
-                - تكثيف الكانات قرب المرتكزات لمقاومة إجهادات القص الحرج ($V_u$).
-            </div>
-            """
 
         html_str += f"""
             <p><b>إجمالي كلفة حديد الأوفرلاب للأعمدة:</b> {tot_lap_cost_iqd:,.0f} دينار عراقي</p>
