@@ -5,20 +5,20 @@ import math
 
 st.set_page_config(page_title="المنظومة الهندسية الاستشارية المتكاملة", layout="wide")
 
-st.title("🏛️ المنظومة الهندسية الاستشارية المتكاملة (معماري + إنشائي ACI 318)")
+st.title("🏛️ المنظومة الهندسية الاستشارية المتكاملة (معماري هندسي + إنشائي ACI 318)")
 st.write("---")
 
 # القائمة الجانبية للتنقل بين الأقسام
 mode = st.sidebar.selectbox(
     "اختر قسم العمل المطلوب:", 
-    ["🏡 التصميم المعماري ورسم الخرائط", "🔍 تدقيق العناصر الإنشائية (عراقي)"]
+    ["🏡 التصميم المعماري ورسم الخرائط الهندسية", "🔍 تدقيق العناصر الإنشائية (عراقي)"]
 )
 
 # ==========================================
-# 1. قسم التصميم المعماري ورسم الخريطة (2D Floor Plan)
+# 1. قسم التصميم المعماري ورسم المخطط الهندسي
 # ==========================================
 if "المعماري" in mode:
-    st.header("🏡 قسم التصميم المعماري وتوليد المخططات الهندسية")
+    st.header("🏡 قسم التصميم المعماري وتوليد المخططات الهندسية (AutoCAD Style)")
     st.write("---")
 
     # مساحة الأرض
@@ -43,7 +43,7 @@ if "المعماري" in mode:
         st.markdown("🔹 **الحديقة والكراج الأمامي:**")
         garden_depth = st.number_input("طول الحديقة/الكراج (متر)", value=5.0, step=0.5)
         
-        st.markdown("🔹 **استقبال الضيوف (المضيف):**")
+        st.markdown("🔹 **الاستقبال (الصاحون / المضيف):**")
         rec_w = st.number_input("عرض الاستقبال (متر)", value=4.0, step=0.5)
         rec_l = st.number_input("طول الاستقبال (متر)", value=5.0, step=0.5)
 
@@ -52,69 +52,83 @@ if "المعماري" in mode:
         kit_l = st.number_input("طول المطبخ (متر)", value=4.0, step=0.5)
 
     with col_f2:
-        st.markdown("🔹 **الهول الداخلي (المعيشة):**")
+        st.markdown("🔹 **صالة المعيشة (الهول الداخلي):**")
         hall_w = st.number_input("عرض الهول (متر)", value=frontage, step=0.5)
         hall_l = st.number_input("طول الهول (متر)", value=6.0, step=0.5)
 
-        st.markdown("🔹 **غرفة النوم الأرضية:**")
+        st.markdown("🔹 **غرفة النوم الرئيسية:**")
         room_w = st.number_input("عرض غرفة النوم (متر)", value=4.0, step=0.5)
         room_l = st.number_input("طول غرفة النوم (متر)", value=4.0, step=0.5)
 
     st.write("---")
 
-    # زر توليد ورسم الخارطة الهندسية
-    if st.button("🎨 توليد ورسم الخارطة الهندسية المعمارية (Generate Floor Plan)"):
-        st.success("تم حساب الأبعاد وتوليد المخطط الهندسي بنجاح! ✅")
+    # زر توليد الخارطة الهندسية النمطية
+    if st.button("📐 توليد المخطط الهندسي المعماري المعتمد"):
+        st.success("تم توليد الخارطة الهندسية بالأسلوب المعماري الدقيق بنجاح! ✅")
 
-        # رسم الخريطة باستخدام Matplotlib
-        fig, ax = plt.subplots(figsize=(8, 12))
-        ax.set_xlim(0, frontage)
-        ax.set_ylim(0, depth)
-        ax.set_aspect('equal')
-        ax.set_title(f"مخطط معماري مقترح - واجهة {frontage}م × نزال {depth}م", fontsize=14, fontweight='bold', pad=15)
+        # إعداد لوحة الرسم بنمط مخطط هندسي (Blueprint / Architectural Drawing)
+        fig, ax = plt.subplots(figsize=(9, 13))
+        ax.set_facecolor('white')
+        fig.patch.set_facecolor('white')
         
-        # رسم حدود قطعة الأرض الخارجية
-        plot_boundary = patches.Rectangle((0, 0), frontage, depth, linewidth=3, edgecolor='black', facecolor='#fdfdfd', zorder=1)
-        ax.add_patch(plot_boundary)
+        ax.set_xlim(-0.5, frontage + 0.5)
+        ax.set_ylim(-0.5, depth + 0.5)
+        ax.set_aspect('equal')
+        
+        # العنوان الهندسي
+        ax.set_title(f"المخطط المعماري للطابق الأرضي — مساحة الأرض: {total_plot_area:.1f} م²\n(واجهة {frontage}م × نزال {depth}م)", 
+                     fontsize=13, fontweight='bold', color='black', pad=20)
+        
+        # رسم حدود الجدران الخارجية بlines سميكة وسوداء
+        outer_wall = patches.Rectangle((0, 0), frontage, depth, linewidth=3.5, edgecolor='black', facecolor='none', zorder=5)
+        ax.add_patch(outer_wall)
 
         current_y = depth
 
-        # 1. رسم الحديقة / الكراج
+        # 1. الحديقة والكراج الأمامي
         if garden_depth > 0:
             current_y -= garden_depth
-            garden_rect = patches.Rectangle((0, current_y), frontage, garden_depth, linewidth=2, edgecolor='green', facecolor='#d4edda', alpha=0.7, zorder=2)
-            ax.add_patch(garden_rect)
-            ax.text(frontage/2, current_y + garden_depth/2, f"الحديقة / الكراج\n({frontage}x{garden_depth}م)", color='darkgreen', fontsize=11, fontweight='bold', ha='center', va='center')
+            garden_box = patches.Rectangle((0, current_y), frontage, garden_depth, linewidth=2, edgecolor='black', facecolor='#f8f9fa', hatch='//', zorder=2)
+            ax.add_patch(garden_box)
+            ax.text(frontage/2, current_y + garden_depth/2, f"الحديقة / الكراج\n({frontage}م × {garden_depth}م)", 
+                    fontsize=11, fontweight='bold', color='black', ha='center', va='center', bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
 
-        # 2. رسم الاستقبال والمطبخ
+        # 2. الاستقبال والمطبخ (صف واحد متناسق)
         row_l = max(rec_l, kit_l)
         current_y -= row_l
-        if rec_w > 0 and rec_l > 0:
-            rec_rect = patches.Rectangle((0, current_y), rec_w, row_l, linewidth=2, edgecolor='blue', facecolor='#cce5ff', alpha=0.7, zorder=2)
-            ax.add_patch(rec_rect)
-            ax.text(rec_w/2, current_y + row_l/2, f"الاستقبال\n({rec_w}x{row_l}م)", color='darkblue', fontsize=10, fontweight='bold', ha='center', va='center')
-        if kit_w > 0 and kit_l > 0:
-            kit_rect = patches.Rectangle((frontage - kit_w, current_y), kit_w, row_l, linewidth=2, edgecolor='orange', facecolor='#ffeeba', alpha=0.7, zorder=2)
-            ax.add_patch(kit_rect)
-            ax.text(frontage - kit_w/2, current_y + row_l/2, f"المطبخ\n({kit_w}x{row_l}م)", color='darkorange', fontsize=10, fontweight='bold', ha='center', va='center')
+        if rec_w > 0 and row_l > 0:
+            rec_box = patches.Rectangle((0, current_y), rec_w, row_l, linewidth=2, edgecolor='black', facecolor='white', zorder=3)
+            ax.add_patch(rec_box)
+            ax.text(rec_w/2, current_y + row_l/2, f"استقبال / صالون\n({rec_w}م × {row_l}م)", 
+                    fontsize=10, fontweight='bold', color='black', ha='center', va='center')
+            
+        if kit_w > 0 and row_l > 0:
+            kit_box = patches.Rectangle((frontage - kit_w, current_y), kit_w, row_l, linewidth=2, edgecolor='black', facecolor='white', zorder=3)
+            ax.add_patch(kit_box)
+            ax.text(frontage - kit_w/2, current_y + row_l/2, f"مطبخ\n({kit_w}م × {row_l}م)", 
+                    fontsize=10, fontweight='bold', color='black', ha='center', va='center')
 
-        # 3. رسم الهول الداخلي
+        # 3. صالة المعيشة (الهول الداخلي)
         if hall_l > 0:
             current_y -= hall_l
-            hall_rect = patches.Rectangle((0, current_y), frontage, hall_l, linewidth=2, edgecolor='purple', facecolor='#e2d9f3', alpha=0.7, zorder=2)
-            ax.add_patch(hall_rect)
-            ax.text(frontage/2, current_y + hall_l/2, f"الهول الداخلي / المعيشة\n({frontage}x{hall_l}م)", color='purple', fontsize=11, fontweight='bold', ha='center', va='center')
+            hall_box = patches.Rectangle((0, current_y), frontage, hall_l, linewidth=2, edgecolor='black', facecolor='white', zorder=3)
+            ax.add_patch(hall_box)
+            ax.text(frontage/2, current_y + hall_l/2, f"صالة المعيشة / الهول\n({frontage}م × {hall_l}م)", 
+                    fontsize=11, fontweight='bold', color='black', ha='center', va='center')
 
-        # 4. غرفة النوم في الخلف
+        # 4. غرفة النوم الرئيسية في الخلف
         if room_l > 0:
             current_y -= room_l
-            room_rect = patches.Rectangle((0, current_y), frontage, room_l, linewidth=2, edgecolor='brown', facecolor='#f5c6cb', alpha=0.7, zorder=2)
-            ax.add_patch(room_rect)
-            ax.text(frontage/2, current_y + room_l/2, f"غرفة النوم الرئيسية\n({frontage}x{room_l}م)", color='darkred', fontsize=11, fontweight='bold', ha='center', va='center')
+            room_box = patches.Rectangle((0, current_y), frontage, room_l, linewidth=2, edgecolor='black', facecolor='white', zorder=3)
+            ax.add_patch(room_box)
+            ax.text(frontage/2, current_y + room_l/2, f"غرفة النوم الرئيسية\n({frontage}م × {room_l}م)", 
+                    fontsize=11, fontweight='bold', color='black', ha='center', va='center')
 
-        ax.set_xlabel("عرض الواجهة (متر)", fontsize=11)
-        ax.set_ylabel("النزال (متر)", fontsize=11)
-        ax.grid(True, linestyle='--', alpha=0.5)
+        # ضبط إطارات ورسومات المحاور لتكون بنمط الهندسة المدنية
+        ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+        ax.set_xlabel("عرض الواجهة (متر)", fontsize=11, fontweight='bold')
+        ax.set_ylabel("النزال (متر)", fontsize=11, fontweight='bold')
+        ax.grid(True, linestyle=':', alpha=0.6, color='gray')
 
         st.pyplot(fig)
 
