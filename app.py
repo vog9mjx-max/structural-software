@@ -79,17 +79,17 @@ if st.button("🚀 إجراء التحليل والتصميم الإنشائي �
             with tab2:
                 st.write(f"**B1: مقطع الجسر الرئيسي** أعلى: {beam_res.get('rebar_top', 'N/A')} | سفلي: {beam_res.get('rebar_bottom', 'N/A')}")
                 st.write(f"**C1: مقطع العمود الرئيسي** أبعاد: {col_res.get('dimensions', 'N/A')} | تسليح: {col_res.get('rebar', 'N/A')}")
-                st.write(f"**F1: مقطع الأساس المنفرد** أبعاد: {foot_res.get('dimensions', 'N/A')} | تسليح: {foot_res.get('rebar', 'N/A')}")
-                st.write(f"**مقطع الأساس المنفرد F1:** أبعاد {foot_res['dimensions']} - تسليح {foot_res['rebar']}")
+                st.write(f"**F1: مقطع الأساس المنفرد** أبعاد: {foot_res.get('dimensions', 'N/A')} | تسليح: {foot_res.get('rebar', 'N/A')}") 
                 
             with tab3:
                 st.header("جدول التسليح الكلي وحصر الكميات (BOQ)")
                 st.table([
-                    {"العنصر الإنشائي": "البلاطة (Slabs S1)", "التسليح العلوي/السفلي": slab_res['rebar'], "الكود/الرمز": "S1"},
-                    {"العنصر الإنشائي": "الجسور (Beams B1-B4)", "التسليح العلوي/السفلي": f"{beam_res['rebar_top']} / {beam_res['rebar_bottom']}", "الكود/الرمز": "B1"},
-                    {"العنصر الإنشائي": "الأعمدة (Columns C1-C4)", "التسليح الرئيسي": col_res['rebar'], "الكود/الرمز": "C1"},
-                    {"العنصر الإنشائي": "الأساسات (Footings F1-F4)", "التسليح بالاتجاهين": foot_res['rebar'], "الكود/الرمز": "F1"},
-                ])
+        {"الكود/الرمز": "S1", "العنصر الإنشائي": "البلاطة (Slabs S1)", "التسليح العلوي/السفلي": slab_res.get('rebar', 'N/A')},
+        {"الكود/الرمز": "B1", "العنصر الإنشائي": "الجسور (Beams B1-B4)", "التسليح العلوي/السفلي": f"أعلى: {beam_res.get('rebar_top', 'N/A')} | سفلي: {beam_res.get('rebar_bottom', 'N/A')}"},
+        {"الكود/الرمز": "C1", "العنصر الإنشائي": "الأعمدة (Columns C1-C4)", "التسليح الرئيسي": col_res.get('rebar', 'N/A')},
+        {"الكود/الرمز": "F1", "العنصر الإنشائي": "الأساسات (Footings F1-F4)", "التسليح بالاتجاهين": foot_res.get('rebar', 'N/A')}
+    ])
+                
                 
             with tab4:
                 st.header("التقرير الحسابي التنفيذي")
