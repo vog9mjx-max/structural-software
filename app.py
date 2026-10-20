@@ -86,8 +86,8 @@ live_brick_price = st.sidebar.number_input("سعر الطابوقة الحمرا
 # 0. قسم جدول الكميات والتسعير الشامل والمحدّث بدقة
 # ==========================================
 if "جدول الكميات والتسعير الشامل" in mode:
-    st.header("📋 جدول الكميات والتسعير الشامل (حسب الأسواق العراقية)")
-    st.markdown("أدخل المساحات، واختَر أنواع الأرضيات وأقطار حديد التسليح بدقة ليتسنى للنظام منحك كلفة دقيقة:")
+    st.header("📋 جدول الكميات والتسعير الشامل (BOQ حسب الأسواق العراقية)")
+    st.markdown("أدخل المساحات، واختَر أنواع الأرضيات وأقطار حديد التسليح بدقة ليتسنى للنظام توليد جدول كميات استشاري متكامل:")
     st.write("---")
 
     prices = {
@@ -144,8 +144,8 @@ if "جدول الكميات والتسعير الشامل" in mode:
         q_steel_ton = st.number_input("وزن حديد التسليح التقديري (طن)", min_value=0.0, value=3.5, step=0.5, key="s_ton_new")
 
     st.write("---")
-    if st.button("📊 احسب التكلفة الإجمالية والكميات للسوق العراقي بدقة", use_container_width=True):
-        st.success("تم احتساب جدول الكميات والتسعير المالي بنجاح تام ✅")
+    if st.button("📊 احسب جدول الكميات والتسعير للسوق العراقي بدقة", use_container_width=True):
+        st.success("تم احتساب جدول الكميات (BOQ) وتوليد التفاصيل المالية بنجاح تام ✅")
         
         if "أصفر" in brick_type_sel:
             b_count = int(q_brick_area * 58 * 1.05)
@@ -181,15 +181,45 @@ if "جدول الكميات والتسعير الشامل" in mode:
 
         total_project_cost = b_cost + cement_cost + sand_cost + f_cost + concrete_cost + steel_cost
 
-        st.subheader("📑 جدول الكميات والكلف التقديرية المعتمدة:")
+        st.subheader("📑 جدول الكميات والكلف التقديرية المعتمدة (BOQ):")
         
         table_data = [
-            {"المادة الرئيسية": brick_type_sel, "الكمية المطلوبة": f"{b_count:,} قطعة", "السعر التقديري (د.ع)": f"{b_cost:,.0f}"},
-            {"المادة الرئيسية": "أسمنت عراقي مقنّن", "الكمية المطلوبة": f"{cement_bags_total:,} كيس", "السعر التقديري (د.ع)": f"{cement_cost:,.0f}"},
-            {"المادة الرئيسية": "رمل ناعم للمونة واللبخ", "الكمية المطلوبة": f"{sand_total_m3} م³", "السعر التقديري (د.ع)": f"{sand_cost:,.0f}"},
-            {"المادة الرئيسية": f"أرضيات ({floor_type_sel})", "الكمية المطلوبة": f"{q_floor_area} م²", "السعر التقديري (د.ع)": f"{f_cost:,.0f}"},
-            {"المادة الرئيسية": "خرسانة مسلحة (مادة أولية)", "الكمية المطلوبة": f"{q_concrete_vol} م³", "السعر التقديري (د.ع)": f"{concrete_cost:,.0f}"},
-            {"المادة الرئيسية": f"{steel_type_sel} - قطر ({steel_diameter_sel})", "الكمية المطلوبة": f"{q_steel_ton} طن", "السعر التقديري (د.ع)": f"{steel_cost:,.0f}"}
+            {
+                "المادة الرئيسية": brick_type_sel, 
+                "المساحة / البعد المُدخل": f"{q_brick_area} م² جدران", 
+                "الكمية المطلوبة": f"{b_count:,} قطعة", 
+                "السعر التقديري (د.ع)": f"{b_cost:,.0f}"
+            },
+            {
+                "المادة الرئيسية": "أسمنت عراقي مقنّن (لمونة البناء واللبخ)", 
+                "المساحة / البعد المُدخل": f"{q_brick_area + q_plaster_area} م² إجمالي", 
+                "الكمية المطلوبة": f"{cement_bags_total:,} كيس", 
+                "السعر التقديري (د.ع)": f"{cement_cost:,.0f}"
+            },
+            {
+                "المادة الرئيسية": "رمل ناعم للمونة واللبخ", 
+                "المساحة / البعد المُدخل": f"{q_brick_area + q_plaster_area} م² إجمالي", 
+                "الكمية المطلوبة": f"{sand_total_m3} م³", 
+                "السعر التقديري (د.ع)": f"{sand_cost:,.0f}"
+            },
+            {
+                "المادة الرئيسية": f"أرضيات ({floor_type_sel})", 
+                "المساحة / البعد المُدخل": f"{q_floor_area} م² أرضيات", 
+                "الكمية المطلوبة": f"{q_floor_area} م²", 
+                "السعر التقديري (د.ع)": f"{f_cost:,.0f}"
+            },
+            {
+                "المادة الرئيسية": "خرسانة مسلحة (مادة أولية للمنشأ)", 
+                "المساحة / البعد المُدخل": f"{q_concrete_vol} م³ خرسانة", 
+                "الكمية المطلوبة": f"{q_concrete_vol} م³", 
+                "السعر التقديري (د.ع)": f"{concrete_cost:,.0f}"
+            },
+            {
+                "المادة الرئيسية": f"{steel_type_sel} - قطر ({steel_diameter_sel})", 
+                "المساحة / البعد المُدخل": f"{q_concrete_vol} م³ منشأ", 
+                "الكمية المطلوبة": f"{q_steel_ton} طن", 
+                "السعر التقديري (د.ع)": f"{steel_cost:,.0f}"
+            }
         ]
 
         st.table(table_data)
@@ -200,28 +230,28 @@ if "جدول الكميات والتسعير الشامل" in mode:
 
         # أزرار التصدير (Excel و PDF)
         st.write("---")
-        st.subheader("📥 تنزيل التقارير والجداول الاحترافية")
+        st.subheader("📥 تنزيل التقارير وجداول الـ (BOQ) الاحترافية")
         
         col_dl1, col_dl2 = st.columns(2)
         
-        csv_content = "المادة الرئيسية,الكمية المطلوبة,السعر التقديري (دينار عراقي)\n"
+        csv_content = "المادة الرئيسية,المساحة / البعد المُدخل,الكمية المطلوبة,السعر التقديري (دينار عراقي)\n"
         for row in table_data:
-            csv_content += f"{row['المادة الرئيسية']},{row['الكمية المطلوبة']},{row['السعر التقديري (د.ع)']}\n"
-        csv_content += f"التكلفة الإجمالية,,{total_project_cost:,.0f}\n"
+            csv_content += f"{row['المادة الرئيسية']},{row['المساحة / البعد المُدخل']},{row['الكمية المطلوبة']},{row['السعر التقديري (د.ع)']}\n"
+        csv_content += f"التكلفة الإجمالية,,, {total_project_cost:,.0f}\n"
         
         b64_csv = base64.b64encode(csv_content.encode('utf-8-sig')).decode()
         with col_dl1:
             st.markdown(f"""
                 <a href="data:file/csv;base64,{b64_csv}" download="Muhamed_Zannon_BOQ_Report.csv" style="text-decoration: none;">
                     <div style="background-color: #166534; color: white; padding: 12px 20px; border-radius: 8px; text-align: center; font-weight: bold;">
-                        📊 تحميل جدول Excel (.csv)
+                        📊 تحميل جدول Excel (.csv) للـ BOQ
                     </div>
                 </a>
             """, unsafe_allow_html=True)
 
         html_report = f"""
         <html dir="rtl">
-        <head><meta charset="utf-8"><title>تقرير جدول الكميات</title>
+        <head><meta charset="utf-8"><title>تقرير جدول الكميات BOQ</title>
         <style>
             body {{ font-family: Tahoma, sans-serif; padding: 20px; color: #333; }}
             h1 {{ color: #0f172a; text-align: center; }}
@@ -236,12 +266,12 @@ if "جدول الكميات والتسعير الشامل" in mode:
             <h1>المنظومة الهندسية الاستشارية</h1>
             <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
             <hr>
-            <h2>تقرير جدول الكميات والكلف (BOQ)</h2>
+            <h2>تقرير جدول الكميات والكلف (BOQ) التفصيلي</h2>
             <table>
-                <tr><th>المادة الرئيسية</th><th>الكمية المطلوبة</th><th>السعر التقديري (د.ع)</th></tr>
+                <tr><th>المادة الرئيسية</th><th>المساحة / البعد المُدخل</th><th>الكمية المطلوبة</th><th>السعر التقديري (د.ع)</th></tr>
         """
         for row in table_data:
-            html_report += f"<tr><td>{row['المادة الرئيسية']}</td><td>{row['الكمية المطلوبة']}</td><td>{row['السعر التقديري (د.ع)']}</td></tr>"
+            html_report += f"<tr><td>{row['المادة الرئيسية']}</td><td>{row['المساحة / البعد المُدخل']}</td><td>{row['الكمية المطلوبة']}</td><td>{row['السعر التقديري (د.ع)']}</td></tr>"
         html_report += f"""
             </table>
             <div class="total">التكلفة الإجمالية للمواد: {total_project_cost:,.0f} دينار عراقي</div>
