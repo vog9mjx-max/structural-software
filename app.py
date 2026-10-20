@@ -52,8 +52,8 @@ if st.button("🚀 إجراء التحليل والتصميم الإنشائي �
             accumulated_live_load = slab_res['live_load'] * span_x * span_y * num_floors
             total_column_load = 1.2 * accumulated_dead_load + 1.6 * accumulated_live_load
             
-            col_res = col_eng.design_column(pu=total_column_load)
-            foot_res = foot_eng.design_footing(pu=total_column_load, qa=150.0)
+            col_res = col_eng.design_column(total_column_load)
+            foot_res = foot_eng.design_footing(total_column_load)
             
             st.success("✅ تم اكتمال الحسابات والتصميم الإنشائي بنجاح!")
             
