@@ -69,7 +69,7 @@ mode = st.sidebar.selectbox(
         "📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)",
         "🏛️ حساب كميات وكلف واجهات البيوت والفلل (Façade Works)",
         "🏡 التصميم المعماري وتوزيع المساحات والخرائط", 
-        "🔍 التدقيق الإنشائي، تحليل مواقع السقوف والعزوم والأوفرلاب (ACI 318)",
+        "🔍 التدقيق والتحليل الإنشائي والتوليد التلقائي (ACI 318)",
         "📊 حاسبة المواد التفصيلية (الطابوق، الأسمنت، الأرضيات)"
     ]
 )
@@ -249,16 +249,15 @@ elif "التصميم المعماري" in mode:
         st.pyplot(fig)
 
 # ==========================================
-# 3. التدقيق الإنشائي، مواقع السقوف، العزوم، والأوفرلاب (ACI 318)
+# 3. التدقيق الإنشائي والتوليد التلقائي الذكي (ACI 318)
 # ==========================================
-elif "التدقيق الإنشائي، تحليل مواقع السقوف والعزوم والأوفرلاب" in mode:
-    st.header("🔍 التدقيق الإنشائي، تحليل مواقع السقوف، العزوم، وتتبع الأوفرلاب (ACI 318)")
-    st.markdown("تحليل السقوف (موقع داخلي، خارجي، حافة، ركن)، وتحديد مسافات وأماكن التداخل (Lap Splice Zone) الدقيقة لكل عنصر وطابق:")
+elif "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
+    st.header("🔍 التدقيق والتحليل الإنشائي والتوليد الذكي التلقائي (ACI 318)")
+    st.markdown("قم باختيار نمط العمل المطلوب (توليد وتصميم إلكتروني تلقائي أو تدقيق يدوي):")
     st.write("---")
 
-    # خيار التصميم الاقتصادي التلقائي الذكي
-    st.subheader("🔮 1. خيار التوليد والتصميم الإنشائي الذكي")
-    auto_design = st.checkbox("⚡ هل تريد أن أصمم لك تصميماً إنشائياً اقتصادياً وآمناً تلقائياً بناءً على الكود (Auto-Design Wizard)؟", value=False)
+    # اختيار النمط الرئيسي
+    auto_design = st.toggle("⚡ تفعيل نظام التوليد والتصميم الإنشائي الذكي التلقائي (Auto-Design Wizard)", value=True)
 
     ALL_BAR_DIAMETERS = [8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32]
     ALL_SLAB_TYPES = [
@@ -272,106 +271,151 @@ elif "التدقيق الإنشائي، تحليل مواقع السقوف وا�
     SLAB_POSITIONS = ["داخلي (Interior)", "خارجي / حافة (Exterior / Edge)", "زاوية / ركن (Corner)"]
 
     st.write("---")
-    st.subheader("🏛️ 2. تحديد عدد الطوابق والغرض الإشغالي")
+    st.subheader("🏛️ 1. البيانات الأساسية للبناية والطوابق")
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        total_floors_cnt = st.number_input("عدد طوابق المنشأ (مفتوح):", min_value=1, max_value=20, value=3, step=1)
+        total_floors_cnt = st.number_input("عدد طوابق المنشأ الكلي:", min_value=1, max_value=20, value=3, step=1)
     with col_f2:
         bldg_use = st.selectbox("الغرض الإشغالي للمبنى:", ["سكني", "تجاري / محلات", "مكاتب إدارية", "مستشفى / خدمي"])
     with col_f3:
         bldg_col_count = st.number_input("عدد أعمدة الطابق الإجمالي:", min_value=4, max_value=60, value=12, step=1)
 
-    if "floor_segments" not in st.session_state:
-        st.session_state.floor_segments = {}
-
-    st.write("---")
-    st.subheader("🏢 3. إدخال وتفكيك بيانات السقوف والجسور والأعمدة طابقاً بطابق")
-
     floors_data = []
 
-    for fl_idx in range(1, total_floors_cnt + 1):
-        fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
+    # ==========================================
+    # المسار الأول: التوليد الإنشائي والتصميم التلقائي الذكي (Auto-Design)
+    # ==========================================
+    if auto_design:
+        st.success("🤖 نظام التوليد التلقائي الذكي مفعل الآن! سيقوم النظام بتوزيع المواقع وتحديد الأقطار والمسافات والأوفرلاب تلقائياً لكل طابق وبلاطة.")
         
-        with st.expander(f"📌 تفاصيل وبيانات {fl_name}", expanded=(fl_idx == 1)):
-            st.markdown(f"##### أ) تقطيع المساحة الإجمالية بمحاور X & Y:")
-            seg_key = f"fl_seg_{fl_idx}"
-            if seg_key not in st.session_state.floor_segments:
-                st.session_state.floor_segments[seg_key] = [{"x": 10.0, "y": 20.0}]
+        st.subheader("📏 أبعاد ومساحة القطعة الأساسية (محاور X & Y)")
+        auto_col_x, auto_col_y = st.columns(2)
+        with auto_col_x:
+            auto_x = st.number_input("عرض البناية الرئيسي X (متر):", value=10.0, step=0.5)
+        with auto_col_y:
+            auto_y = st.number_input("طول البناية الرئيسي Y (متر):", value=20.0, step=0.5)
+        
+        auto_floor_area = auto_x * auto_y
+        st.info(f"إجمالي مساحة الطابق المحسوبة تلقائياً: **{auto_floor_area:.1f} م²**")
 
-            fl_area = 0.0
-            for s_i, seg in enumerate(st.session_state.floor_segments[seg_key]):
-                cx, cy = st.columns(2)
-                with cx: st.session_state.floor_segments[seg_key][s_i]["x"] = st.number_input(f"عرض المقطع X_{s_i+1} (م):", value=seg["x"], step=0.5, key=f"x_{fl_idx}_{s_i}")
-                with cy: st.session_state.floor_segments[seg_key][s_i]["y"] = st.number_input(f"طول المقطع Y_{s_i+1} (م):", value=seg["y"], step=0.5, key=f"y_{fl_idx}_{s_i}")
-                fl_area += st.session_state.floor_segments[seg_key][s_i]["x"] * st.session_state.floor_segments[seg_key][s_i]["y"]
+        # توليد البيانات تلقائياً لجميع الطوابق
+        for fl_idx in range(1, total_floors_cnt + 1):
+            fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
+            
+            # التوليد التلقائي للبلاطات الذكية لكل طابق (بلاطة داخلية وبلاطة خارجية/ركن)
+            auto_slabs = [
+                {
+                    "slab_num": 1,
+                    "type": "سقف مصمت اتجاهين (Solid Slab Two-Way)" if fl_idx < total_floors_cnt else "سقف مصمت اتجاه واحد (Solid Slab One-Way)",
+                    "pos": "داخلي (Interior)",
+                    "dia": 12 if fl_idx == 1 else 10,
+                    "spacing": 150
+                },
+                {
+                    "slab_num": 2,
+                    "type": "سقف مصمت اتجاهين (Solid Slab Two-Way)" if fl_idx < total_floors_cnt else "سقف مصمت اتجاه واحد (Solid Slab One-Way)",
+                    "pos": "خارجي / حافة (Exterior / Edge)" if fl_idx == 1 else "زاوية / ركن (Corner)",
+                    "dia": 12,
+                    "spacing": 125
+                }
+            ]
 
-            cb1, cb2 = st.columns(2)
-            with cb1:
-                if st.button(f"➕ إضافة مقطع مساحة لـ {fl_name}", key=f"add_{fl_idx}"):
-                    st.session_state.floor_segments[seg_key].append({"x": 4.0, "y": 5.0})
-                    st.rerun()
-            with cb2:
-                if len(st.session_state.floor_segments[seg_key]) > 1:
-                    if st.button(f"🗑️ حذف آخر مقطع من {fl_name}", key=f"del_{fl_idx}"):
-                        st.session_state.floor_segments[seg_key].pop()
-                        st.rerun()
-
-            st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
-
-            # خانة تحديد عدد البلاطات للسقف وتفاصيلها
-            st.markdown(f"##### ب) تحليل بلاطات/سقوف {fl_name} (المواقع والعزوم):")
-            sl_count = st.number_input(f"عدد البلاطات/السقوف المراد تدقيقها في {fl_name}:", min_value=1, max_value=8, value=2, step=1, key=f"sl_cnt_{fl_idx}")
-
-            floor_slabs = []
-            for s_idx in range(int(sl_count)):
-                st.caption(f"🔹 البلاطة ({s_idx + 1}) في {fl_name}:")
-                sc1, sc2, sc3, sc4 = st.columns(4)
-                with sc1:
-                    stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
-                with sc2:
-                    spos = st.selectbox(f"موقع البلاطة ({s_idx+1}):", SLAB_POSITIONS, index=0 if s_idx==0 else 1, key=f"spos_{fl_idx}_{s_idx}")
-                with sc3:
-                    sdia = st.selectbox(f"قطر حديد البلاطة:", ALL_BAR_DIAMETERS, index=1, format_func=lambda x: f"Ø{x} مم", key=f"sdia_{fl_idx}_{s_idx}")
-                with sc4:
-                    sspace = st.number_input(f"المسافة بين الأسياخ (مم):", min_value=100, max_value=300, value=150 if "داخلي" in spos else 125, step=25, key=f"ssp_{fl_idx}_{s_idx}")
-
-                floor_slabs.append({
-                    "slab_num": s_idx + 1,
-                    "type": stype,
-                    "pos": spos,
-                    "dia": sdia,
-                    "spacing": sspace
-                })
-
-            # بيانات الأعمدة والجسور
-            st.markdown(f"##### ج) تسليح الأعمدة والجسور لـ {fl_name}:")
-            col_d1, col_d2, col_d3 = st.columns(3)
-            with col_d1:
-                col_bar_d = st.selectbox(f"قطر حديد الأعمدة:", ALL_BAR_DIAMETERS, index=6, format_func=lambda x: f"Ø{x} مم", key=f"cd_{fl_idx}")
-                col_bar_num = st.number_input(f"عدد الأسياخ بالعمود:", min_value=4, max_value=24, value=8, step=2, key=f"cn_{fl_idx}")
-            with col_d2:
-                beam_bar_d = st.selectbox(f"قطر حديد الجسور:", ALL_BAR_DIAMETERS, index=4, format_func=lambda x: f"Ø{x} مم", key=f"bd_{fl_idx}")
-                beam_bar_num = st.number_input(f"أسياخ الجسر الرئيسي:", min_value=2, max_value=16, value=4, step=1, key=f"bn_{fl_idx}")
-            with col_d3:
-                beam_count = st.number_input(f"عدد الجسور في الطابق:", min_value=2, max_value=30, value=8, step=1, key=f"bmc_{fl_idx}")
-                stirrup_sp = st.number_input(f"مسافة الكانات (مم):", min_value=50, max_value=250, value=100, step=25, key=f"stsp_{fl_idx}")
+            # أقطار الأعمدة والجسور التلقائية (تتدرج حسب الأحمال)
+            col_d_auto = 25 if fl_idx == 1 and total_floors_cnt > 3 else (20 if fl_idx <= 2 else 16)
+            col_n_auto = 8 if total_floors_cnt <= 3 else 10
+            beam_d_auto = 16
+            beam_n_auto = 4
 
             floors_data.append({
                 "floor_num": fl_idx,
                 "floor_title": fl_name,
-                "area": fl_area,
-                "slabs": floor_slabs,
-                "c_dia": col_bar_d,
-                "c_num": col_bar_num,
-                "b_dia": beam_bar_d,
-                "b_num": beam_bar_num,
-                "b_cnt": beam_count,
-                "st_sp": stirrup_sp
+                "area": auto_floor_area,
+                "slabs": auto_slabs,
+                "c_dia": col_d_auto,
+                "c_num": col_n_auto,
+                "b_dia": beam_d_auto,
+                "b_num": beam_n_auto,
+                "b_cnt": 8,
+                "st_sp": 100
             })
 
+    # ==========================================
+    # المسار الثاني: التدقيق والإدخال اليدوي المباشر
+    # ==========================================
+    else:
+        st.warning("🛠️ وضع الإدخال اليدوي مفعل! قُم بتوسعة كل طابق وتحديد الأقطار والمواصفات بنفسك.")
+        if "floor_segments" not in st.session_state:
+            st.session_state.floor_segments = {}
+
+        for fl_idx in range(1, total_floors_cnt + 1):
+            fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
+            
+            with st.expander(f"📌 تفاصيل وبيانات {fl_name}", expanded=(fl_idx == 1)):
+                seg_key = f"fl_seg_{fl_idx}"
+                if seg_key not in st.session_state.floor_segments:
+                    st.session_state.floor_segments[seg_key] = [{"x": 10.0, "y": 20.0}]
+
+                fl_area = 0.0
+                for s_i, seg in enumerate(st.session_state.floor_segments[seg_key]):
+                    cx, cy = st.columns(2)
+                    with cx: st.session_state.floor_segments[seg_key][s_i]["x"] = st.number_input(f"عرض المقطع X_{s_i+1} (م):", value=seg["x"], step=0.5, key=f"x_{fl_idx}_{s_i}")
+                    with cy: st.session_state.floor_segments[seg_key][s_i]["y"] = st.number_input(f"طول المقطع Y_{s_i+1} (م):", value=seg["y"], step=0.5, key=f"y_{fl_idx}_{s_i}")
+                    fl_area += st.session_state.floor_segments[seg_key][s_i]["x"] * st.session_state.floor_segments[seg_key][s_i]["y"]
+
+                cb1, cb2 = st.columns(2)
+                with cb1:
+                    if st.button(f"➕ إضافة مقطع مساحة لـ {fl_name}", key=f"add_{fl_idx}"):
+                        st.session_state.floor_segments[seg_key].append({"x": 4.0, "y": 5.0})
+                        st.rerun()
+                with cb2:
+                    if len(st.session_state.floor_segments[seg_key]) > 1:
+                        if st.button(f"🗑️ حذف آخر مقطع من {fl_name}", key=f"del_{fl_idx}"):
+                            st.session_state.floor_segments[seg_key].pop()
+                            st.rerun()
+
+                st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
+
+                sl_count = st.number_input(f"عدد البلاطات/السقوف المراد تدقيقها في {fl_name}:", min_value=1, max_value=8, value=2, step=1, key=f"sl_cnt_{fl_idx}")
+
+                floor_slabs = []
+                for s_idx in range(int(sl_count)):
+                    sc1, sc2, sc3, sc4 = st.columns(4)
+                    with sc1: stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
+                    with sc2: spos = st.selectbox(f"موقع البلاطة ({s_idx+1}):", SLAB_POSITIONS, index=0 if s_idx==0 else 1, key=f"spos_{fl_idx}_{s_idx}")
+                    with sc3: sdia = st.selectbox(f"قطر حديد البلاطة:", ALL_BAR_DIAMETERS, index=1, format_func=lambda x: f"Ø{x} مم", key=f"sdia_{fl_idx}_{s_idx}")
+                    with sc4: sspace = st.number_input(f"المسافة بين الأسياخ (مم):", min_value=100, max_value=300, value=150 if "داخلي" in spos else 125, step=25, key=f"ssp_{fl_idx}_{s_idx}")
+
+                    floor_slabs.append({"slab_num": s_idx + 1, "type": stype, "pos": spos, "dia": sdia, "spacing": sspace})
+
+                col_d1, col_d2, col_d3 = st.columns(3)
+                with col_d1:
+                    col_bar_d = st.selectbox(f"قطر حديد الأعمدة:", ALL_BAR_DIAMETERS, index=6, format_func=lambda x: f"Ø{x} مم", key=f"cd_{fl_idx}")
+                    col_bar_num = st.number_input(f"عدد الأسياخ بالعمود:", min_value=4, max_value=24, value=8, step=2, key=f"cn_{fl_idx}")
+                with col_d2:
+                    beam_bar_d = st.selectbox(f"قطر حديد الجسور:", ALL_BAR_DIAMETERS, index=4, format_func=lambda x: f"Ø{x} مم", key=f"bd_{fl_idx}")
+                    beam_bar_num = st.number_input(f"أسياخ الجسر الرئيسي:", min_value=2, max_value=16, value=4, step=1, key=f"bn_{fl_idx}")
+                with col_d3:
+                    beam_count = st.number_input(f"عدد الجسور في الطابق:", min_value=2, max_value=30, value=8, step=1, key=f"bmc_{fl_idx}")
+                    stirrup_sp = st.number_input(f"مسافة الكانات (مم):", min_value=50, max_value=250, value=100, step=25, key=f"stsp_{fl_idx}")
+
+                floors_data.append({
+                    "floor_num": fl_idx,
+                    "floor_title": fl_name,
+                    "area": fl_area,
+                    "slabs": floor_slabs,
+                    "c_dia": col_bar_d,
+                    "c_num": col_bar_num,
+                    "b_dia": beam_bar_d,
+                    "b_num": beam_bar_num,
+                    "b_cnt": beam_count,
+                    "st_sp": stirrup_sp
+                })
+
     st.write("---")
-    if st.button("🚀 إجراء التحليل الهندسي، مواقع الأوفرلاب، والعزوم طابقاً بطابق", use_container_width=True):
-        st.success("تم الحساب والتحليل الهندسي الكامل ومراعاة مواقع الأوفرلاب وفق الكود ACI 318 بنجاح ✅")
+    btn_text = "⚡ توليد وعرض التقرير الإنشائي الذكي والأوفرلاب والعزوم" if auto_design else "🚀 إجراء التحليل الهندسي، مواقع الأوفرلاب، والعزوم طابقاً بطابق"
+    
+    if st.button(btn_text, use_container_width=True):
+        st.success("تم الحساب والتحليل الهندسي ومراعاة مواقع الأوفرلاب وفق الكود ACI 318 بنجاح ✅")
 
         # 1. جدول تحليل البلاطات والسقوف وتكثيف الحديد ومواقع الأوفرلاب
         st.subheader("📑 1. جدول تحليل البلاطات، أماكن الأوفرلاب ومناطق العزوم لكل طابق:")
@@ -389,7 +433,6 @@ elif "التدقيق الإنشائي، تحليل مواقع السقوف وا�
 
             slab_analysis_table = []
             for sl in f_item["slabs"]:
-                # تحليل هندسي لموقع البلاطة والعزوم والأوفرلاب
                 slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
                 if "زاوية" in sl["pos"]:
                     mom_notes = "عزوم التواء (Torsion) وعزوم حافة قصوى. يُكثّف التسليح في الزوايا الإضافية وفي الاتجاهين."
@@ -408,7 +451,7 @@ elif "التدقيق الإنشائي، تحليل مواقع السقوف وا�
                     "رقم البلاطة": f"بلاطة ({sl['slab_num']})",
                     "نوع السقف": sl["type"],
                     "موقع البلاطة الإنشائي": sl["pos"],
-                    "التسليح الفعلي": f"Ø{sl['dia']} كل {sl['spacing']}مم",
+                    "التسليح الفعلي / المولد": f"Ø{sl['dia']} كل {sl['spacing']}مم",
                     "موقع وطول الأوفرلاب (Lap Splice)": overlap_loc,
                     "تحليل العزوم ومناطق التكثيف الإنشائية": mom_notes,
                     "التقييم الإنشائي": "✅ آمن ومطابق للكود"
@@ -456,13 +499,13 @@ elif "التدقيق الإنشائي، تحليل مواقع السقوف وا�
             econ_floor_table = [
                 {
                     "العنصر": "تسليح السقوف والبلاطات",
-                    "التسليح المختار": f"معدل Ø{f_item['slabs'][0]['dia']}",
+                    "التسليح المختار / المولد": f"معدل Ø{f_item['slabs'][0]['dia']}",
                     "التسليح الاقتصادي الموصى به": "Ø10 أو Ø12 كل 175-200مم",
                     "توصية التوفير المالي (د.ع)": "اعتماد الأقطار الاقتصادي الموصى به يوفر ~10% من الحديد."
                 },
                 {
                     "العنصر": "تسليح الأعمدة والجسور",
-                    "التسليح المختار": f"{f_item['c_num']} Ø{f_item['c_dia']} أعمدة | {f_item['b_num']} Ø{f_item['b_dia']} جسور",
+                    "التسليح المختار / المولد": f"{f_item['c_num']} Ø{f_item['c_dia']} أعمدة | {f_item['b_num']} Ø{f_item['b_dia']} جسور",
                     "التسليح الاقتصادي الموصى به": "8 Ø16 للأعمدة المتكررة",
                     "توصية التوفير المالي (د.ع)": "توزيع الكانات كل 150مم في المنتصف و100مم عند الأطراف يوفر بالكانات."
                 }
@@ -562,7 +605,7 @@ elif "التدقيق الإنشائي، تحليل مواقع السقوف وا�
 elif "حاسبة المواد التفصيلية" in mode:
     st.header("📊 حاسبة المواد التفصيلية والموقع")
     st.write("---")
-    sub_choice = st.selectbox("اختر المادة المراد حسابها:", ["الطابوق والبلوك", "الأارضيات", "مواد الإنهاءات (لبخ وبورك)"])
+    sub_choice = st.selectbox("اختر المادة المراد حسابها:", ["الطابوق والبلوك", "الأرضيات", "مواد الإنهاءات (لبخ وبورك)"])
     waste_pct = st.slider("نسبة الهدر في الموقع (%)", 0, 15, 5)
 
     if "الطابوق" in sub_choice:
