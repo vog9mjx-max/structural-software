@@ -18,7 +18,7 @@ st.markdown("""
     [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stButton button, [data-testid="stSidebar"] p { color: #ffffff; text-align: right; }
     .stButton button { background-color: #0f172a; color: white; border-radius: 6px; font-weight: bold; border: 1px solid #334155; }
     .stButton button:hover { background-color: #334155; color: #ffffff; border-color: #cbd5e1; }
-    /* ضبط اتجاه حقول الإدخال الهندسية من اليسار لليمين LTR للحديد */
+    /* ضبط اتجاه حقول الإدخال الهندسية من اليسار لليمين LTR لرمز الفاي والأرقام */
     .eng-input input { direction: ltr !important; text-align: left !important; font-family: monospace; font-size: 16px; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
@@ -54,15 +54,28 @@ def check_password():
 if not check_password():
     st.stop()
 
-# دالة لتنسيق وترتيب نصوص التسليح إنجليزياً مستقيماً
-def format_rebar_text(input_str):
+# دالة التنسيق الذكي التلقائي: تكتب الرقم والقطر والنظام يضع رمز Φ تلقائياً
+def auto_format_rebar(input_str):
     if not input_str:
         return "1Φ12"
     txt = str(input_str).strip()
+    
+    # تنظيف أي رموز قديمة أو فراغات زائدة
     txt = re.sub(r'(?i)phi', 'Φ', txt)
     txt = re.sub(r'(?i)d', 'Φ', txt)
+    
+    # إذا كتب المستخدم أرقاماً مفصولة بمسافة مثل "2 10" أو "2 12" يحولها تلقائياً إلى "2Φ10"
+    parts = txt.split()
+    if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+        return f"{parts[0]}Φ{parts[1]}"
+    
     if 'Φ' not in txt and 'Ø' not in txt:
-        txt = f"Φ{txt}"
+        # إذا كتب رقماً واحداً فقط يعتبره القطر مع شيش واحد
+        if txt.isdigit():
+            return f"1Φ{txt}"
+        else:
+            return f"1Φ{txt}"
+            
     return txt
 
 # ==========================================
@@ -258,7 +271,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
-    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج الأحمال (Load Path)، والتسليح المباشر بالصيغة الإنجليزية:")
+    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج الأحمال (Load Path)، والإدخال التلقائي المباشر للحديد:")
     st.write("---")
 
     ALL_SLAB_TYPES = [
@@ -309,7 +322,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
 
     floors_data = []
 
-    # إدخال مباشر ومستقيم باللغة الإنجليزية بدون تعارضات الاتجاه
+    # إدخال مباشر: اكتب مثلاً "2 10" أو "2" فيقوم النظام بوضع رمز الفاي تلقائياً لتصبح 2Φ10
     for fl_idx in range(1, total_floors_cnt + 1):
         load_tier = total_floors_cnt - fl_idx + 1  
         fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
@@ -318,28 +331,28 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             st.markdown(f"**أ) نوع سقف البلاطة لـ {fl_name}:**")
             auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
-            st.markdown(f"**ب) تصميم أجزاء العناصر وحقول الإدخال الإنجليزية المباشرة:**")
-            st.caption("✍️ اكتب صيغة التسليح مثل: `2 Phi 10` أو `1 Phi 12 + 1 Phi 10` أو `4 Phi 16` وتلقائياً يُنسقها النظام مستقيمة `2Φ10`[cite: 14].")
+            st.markdown(f"**ب) تصميم أجزاء العناصر (اكتب العدد والقطر مسافة بينهم وسيحط النظام رمز Φ تلقائياً):**")
+            st.caption("✍️ مثال: اكتب `2 10` وستتحول تلقائياً إلى `2Φ10`[cite: 14].")
             
             slab_configs = []
 
             if load_tier == total_floors_cnt:
-                def_col_str = "8 Phi 16"
-                def_beam_str = "4 Phi 16"
+                def_col_str = "8 16"
+                def_beam_str = "4 16"
                 load_desc = "أحمال السطح الأساسية (أقل تراكم)"
             elif load_tier == 1:
-                def_col_str = "12 Phi 20" if columns_count <= 8 else "8 Phi 25"
-                def_beam_str = "6 Phi 16"
+                def_col_str = "12 20" if columns_count <= 8 else "8 25"
+                def_beam_str = "6 16"
                 load_desc = "أقصى تراكم أحمال طوابق المبنى بالكامل"
             else:
-                def_col_str = "8 Phi 20"
-                def_beam_str = "4 Phi 18"
+                def_col_str = "8 20"
+                def_beam_str = "4 18"
                 load_desc = f"تراكم أحمال {load_tier} طوابق ساقطة"
 
             parts_meta = [
-                ("S1", "B1", "C1", "داخلي (Interior)", "1 Phi 12", 150, def_beam_str, def_col_str),
-                ("S2", "B2", "C2", "خارجي / حافة (Exterior)", "1 Phi 12", 125, def_beam_str, def_col_str),
-                ("S3", "B3", "C3", "زاوية / ركن (Corner)", "1 Phi 14", 100, "6 Phi 16", "8 Phi 25" if load_tier==1 else "8 Phi 20")
+                ("S1", "B1", "C1", "داخلي (Interior)", "1 12", 150, def_beam_str, def_col_str),
+                ("S2", "B2", "C2", "خارجي / حافة (Exterior)", "1 12", 125, def_beam_str, def_col_str),
+                ("S3", "B3", "C3", "زاوية / ركن (Corner)", "1 14", 100, "6 16", "8 25" if load_tier==1 else "8 20")
             ]
 
             for s_tag, b_tag, c_tag, s_pos, def_s_inp, def_sp, def_b_inp, def_c_inp in parts_meta:
@@ -348,9 +361,8 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 active_part = st.checkbox(f"اعتماد وتصميم هذه المجموعة في {fl_name}", value=True, key=f"chk_part_{fl_idx}_{s_tag}")
                 
                 if active_part:
-                    # حقول إدخال نصية LTR مباشرة وسهلة
                     p_inp = st.text_input(
-                        f"تسليح بلاطة {s_tag} (مثال: 2 Phi 10 أو 1 Phi 12 + 1 Phi 10)", 
+                        f"تسليح بلاطة {s_tag} (اكتب مثلاً: 2 10)", 
                         value=def_s_inp, 
                         key=f"pinp_{fl_idx}_{s_tag}"
                     )
@@ -363,13 +375,13 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     )
                     
                     b_inp = st.text_input(
-                        f"تسليح جسر {b_tag} (مثال: 4 Phi 16)", 
+                        f"تسليح جسر {b_tag} (اكتب مثلاً: 4 16)", 
                         value=def_b_inp, 
                         key=f"binp_{fl_idx}_{s_tag}"
                     )
                     
                     c_inp = st.text_input(
-                        f"تسليح عمود {c_tag} (مثال: 8 Phi 20)", 
+                        f"تسليح عمود {c_tag} (اكتب مثلاً: 8 20)", 
                         value=def_c_inp, 
                         key=f"cinp_{fl_idx}_{s_tag}"
                     )
@@ -380,10 +392,10 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "col_tag": c_tag,
                         "type": auto_stype,
                         "pos": s_pos,
-                        "slab_reinforcement": format_rebar_text(p_inp),
+                        "slab_reinforcement": auto_format_rebar(p_inp),
                         "spacing": p_sp,
-                        "beam_reinforcement": format_rebar_text(b_inp),
-                        "col_reinforcement": format_rebar_text(c_inp)
+                        "beam_reinforcement": auto_format_rebar(b_inp),
+                        "col_reinforcement": auto_format_rebar(c_inp)
                     })
 
             if not slab_configs:
@@ -414,7 +426,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
     btn_text = "⚡ تنفيذ التصميم الإنشائي وتنسيق الجداول المستقيمة"
     
     if st.button(btn_text, use_container_width=True):
-        st.success("تم إتمام التصميم الإنشائي وتنسيق مدخلات الحديد المستقيمة بنجاح ✅")
+        st.success("تم إتمام التصميم الإنشائي وتنسيق مدخلات الحديد تلقائياً بنجاح ✅")
 
         tab_design, tab_optimize, tab_economy = st.tabs([
             "📐 1. صفحة التصميم والنتائج (الجداول الشاملة)", 
@@ -428,7 +440,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         # تبويب (1): التصميم والتدقيق الإنشائي
         # ==========================================
         with tab_design:
-            st.subheader("📋 نتائج التصميم الإنشائي الفعلي بتنسيق مستقيم وواضح:")
+            st.subheader("📋 نتائج التصميم الإنشائي الفعلي بتنسيق رمز الفاي التلقائي:")
             
             for f_item in floors_data:
                 span_m = f_item["span_x"]
@@ -499,7 +511,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 stirrup_zone_cm = round((span_m / 4.0) * 100, 1)
                 st.info(f"""
                 📌 **دليل الوعي الهندسي والاستشاري لـ {f_item['floor_title']} (حسب كود ACI 318):**
-                * **1. الإدخال الإنجليزي المستقيم:** تم تصحيح طريقة كتابة التسليح لتُكتب إنجليزياً بوضوح ومستقيمة `2Φ10` دون تعارض الاتجاهات[cite: 14].
+                * **1. الإدخال التلقائي للرمز:** يضع النظام رمز الفاي `Φ` فوراً بين العدد والقطر عند الكتابة بكل مرونة وسلاسة[cite: 14].
                 * **2. مسافة تكسيح الشبون الهندسية:** تبدأ من مسافة **{crank_dist_cm} سم (تساوي $L/7$)** لترتفع وتغطي العزم السالب بأمان وتوفر **15% إلى 20%** من حديد التسليح الكلي.
                 * **3. تدرج نقل الأحمال (Load Path):** الأحمال تتراكم تنازلياً من الطوابق العليا نحو الأساسات؛ لذا تم تضخيم تسليح أعمدة وجسور هذا الطابق بذكاء بناءً على معامل (Tier {f_item['load_tier']}).
                 * **4. المسافة الاقتصادية بين الأعمدة:** تترواح بين **(4.0م إلى 6.0م)** لمنع الهدر الإنشائي وضمان صلابة المنشأ[cite: 14].
@@ -610,7 +622,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             html_str += "</table>"
 
             # 3. جدول الأعمدة HTML
-            html_str += "<h4>جدول الأعمدة (Columns - مسار الأحمال)</h4><table><tr><th>الرمز</th><th>الموقع الإنشائي</th><th>تسليح العمود</th><th>تدقيق القص والأحمال</th><th>مكان وطول الأوفرلاب</th></tr>"
+            html_str += "<h4>جدول الأعمدة (Columns - مسار الأحمال)</h4><table><tr><th>الرمز</th><th>الموقع الإنشائي</th><th>تسليح العمود</th><th>تدقيق القص والأحمال</th><th>🟢 آمن ومطابق ACI 318 ✓</th><th>مكان وطول الأوفرلاب</th></tr>"
             for sl in f_item["slabs"]:
                 col_lap_cm = round(48 * 20 / 10.0, 1)
                 html_str += f"<tr><td>{sl['col_tag']}</td><td>عمود لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['col_reinforcement']}</td><td>🟢 آمن ومطابق ACI 318 ✓</td><td>منتصف ارتفاع العمود Zone B ({col_lap_cm} سم)</td></tr>"
@@ -619,7 +631,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             html_str += f"""
             <div class='notes-box'>
                 <b>دليل الوعي الهندسي لـ {f_item['floor_title']} (حسب كود ACI 318):</b><br>
-                1. <b>التنسيق المستقيم:</b> كتابة التسليح إنجليزياً بكل وضوح دون تعارض اتجاه النص.<br>
+                1. <b>الإدخال التلقائي:</b> كتابة العدد والقطر مع مسافة بينهما ليقوم النظام بوضع رمز Φ تلقائياً.<br>
                 2. <b>مسافة تكسيح الشبون:</b> تبدأ من مسافة {crank_dist_cm} سم (تساوي L/7) لتوفير 15% إلى 20% حديد.<br>
                 3. <b>تدرج وانتقال الأحمال (Load Path):</b> تراكم الأحمال تنازلياً من الطوابق العليا نحو الأساس.[cite: 14]
             </div>
