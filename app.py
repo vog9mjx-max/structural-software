@@ -340,10 +340,10 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             })
 
     # ==========================================
-    # المسار الثاني: التدقيق والإدخال اليدوي المباشر
+    # المسار الثاني: التدقيق والإدخال اليدوي المباشر مع تحديد مواقع السقوف
     # ==========================================
     else:
-        st.warning("🛠️ وضع الإدخال اليدوي مفعل! قُم بتوسعة كل طابق وتحديد الأقطار والمواصفات بنفسك.")
+        st.warning("🛠️ وضع الإدخال والتدقيق اليدوي مفعل! يمكنك تحديد كافة التفاصيل ومواقع السقوف بنفسك.")
         if "floor_segments" not in st.session_state:
             st.session_state.floor_segments = {}
 
@@ -351,6 +351,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
             
             with st.expander(f"📌 تفاصيل وبيانات {fl_name}", expanded=(fl_idx == 1)):
+                st.markdown(f"##### أ) تقطيع مساحة {fl_name} (محاور X & Y):")
                 seg_key = f"fl_seg_{fl_idx}"
                 if seg_key not in st.session_state.floor_segments:
                     st.session_state.floor_segments[seg_key] = [{"x": 10.0, "y": 20.0}]
@@ -375,10 +376,12 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
                 st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
 
+                st.markdown(f"##### ب) اختيار أنواع ومواقع السقوف والبلاطات لـ {fl_name}:")
                 sl_count = st.number_input(f"عدد البلاطات/السقوف المراد تدقيقها في {fl_name}:", min_value=1, max_value=8, value=2, step=1, key=f"sl_cnt_{fl_idx}")
 
                 floor_slabs = []
                 for s_idx in range(int(sl_count)):
+                    st.caption(f"🔹 البلاطة ({s_idx + 1}) في {fl_name}:")
                     sc1, sc2, sc3, sc4 = st.columns(4)
                     with sc1: stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
                     with sc2: spos = st.selectbox(f"موقع البلاطة ({s_idx+1}):", SLAB_POSITIONS, index=0 if s_idx==0 else 1, key=f"spos_{fl_idx}_{s_idx}")
@@ -387,6 +390,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
                     floor_slabs.append({"slab_num": s_idx + 1, "type": stype, "pos": spos, "dia": sdia, "spacing": sspace})
 
+                st.markdown(f"##### ج) تسليح الأعمدة والجسور لـ {fl_name}:")
                 col_d1, col_d2, col_d3 = st.columns(3)
                 with col_d1:
                     col_bar_d = st.selectbox(f"قطر حديد الأعمدة:", ALL_BAR_DIAMETERS, index=6, format_func=lambda x: f"Ø{x} مم", key=f"cd_{fl_idx}")
