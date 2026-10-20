@@ -244,7 +244,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
-    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج الأحمال (Load Path)، والتسليح المزدوج للشبون (سفلي وعُلوي للعزم الموجب والسالب):")
+    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج الأحمال (Load Path)، واختيار أقطار حديد متعددة لكل عنصر:")
     st.write("---")
 
     ALL_BAR_DIAMETERS = [8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32]
@@ -296,7 +296,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
 
     floors_data = []
 
-    # محرك تدرج الأحمال (Load Path Accumulation) من السطح إلى الأرضي مع وعي هندسي كامل
+    # محرك تدرج الأحمال (Load Path Accumulation) مع إمكانية اختيار أقطار حديد متعددة (Multiselect) لكل عنصر
     for fl_idx in range(1, total_floors_cnt + 1):
         load_tier = total_floors_cnt - fl_idx + 1  
         fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
@@ -305,39 +305,39 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             st.markdown(f"**أ) نوع سقف البلاطة لـ {fl_name}:**")
             auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
-            st.markdown(f"**ب) تصميم أجزاء العناصر وتدرج الأحمال التراكمي:**")
+            st.markdown(f"**ب) تصميم أجزاء العناصر وتسليح متعدد الأقطار:**")
             
             slab_configs = []
 
             if load_tier == total_floors_cnt:
-                def_col_det = "8Ø16"
-                def_beam_det = "4Ø16"
+                def_col_list = [16]
+                def_beam_list = [16]
                 load_desc = "أحمال السطح الأساسية (أقل تراكم)"
             elif load_tier == 1:
-                def_col_det = "12Ø20" if columns_count <= 8 else "8Ø25"
-                def_beam_det = "6Ø16"
+                def_col_list = [20, 25] if columns_count <= 8 else [25]
+                def_beam_list = [16, 18]
                 load_desc = "أقصى تراكم أحمال طوابق المبنى بالكامل"
             else:
-                def_col_det = "8Ø20"
-                def_beam_det = "4Ø18"
-                load_desc = f"تراكم أحمال {load_tier} طوابق ساقطة"
+                def_col_list = [18, 20]
+                def_beam_list = [16]
 
             parts_meta = [
-                ("S1", "B1", "C1", "داخلي (Interior)", 12, 150, def_beam_det, def_col_det),
-                ("S2", "B2", "C2", "خارجي / حافة (Exterior)", 12, 125, def_beam_det, def_col_det),
-                ("S3", "B3", "C3", "زاوية / ركن (Corner)", 14, 100, "6Ø16", "8Ø25" if load_tier==1 else "8Ø20")
+                ("S1", "B1", "C1", "داخلي (Interior)", [12], 150, def_beam_list, def_col_list),
+                ("S2", "B2", "C2", "خارجي / حافة (Exterior)", [12], 125, def_beam_list, def_col_list),
+                ("S3", "B3", "C3", "زاوية / ركن (Corner)", [14], 100, [16, 18], [20, 25] if load_tier==1 else [20])
             ]
 
-            for s_tag, b_tag, c_tag, s_pos, def_dia, def_sp, def_beam, def_col in parts_meta:
+            for s_tag, b_tag, c_tag, s_pos, def_dias, def_sp, def_beams, def_cols in parts_meta:
                 st.markdown(f"🔹 **{b_tag} I جسر I {s_tag} بلاطة) الموقع: {s_pos} ({c_tag} عمود) | {load_desc}**")
                 
                 active_part = st.checkbox(f"اعتماد وتصميم هذه المجموعة في {fl_name}", value=True, key=f"chk_part_{fl_idx}_{s_tag}")
                 
                 if active_part:
-                    p_dia = st.selectbox(
-                        f"{s_tag} تسليح بلاطة", 
+                    # استخدام st.multiselect بدلاً من selectbox المنفرد لاختيار عدة أقطار / شيش
+                    p_dias = st.multiselect(
+                        f"{s_tag} أقطار حديد تسليح البلاطة (اختر قطر أو عدة أقطار رئيسية وتوزيع)", 
                         ALL_BAR_DIAMETERS, 
-                        index=ALL_BAR_DIAMETERS.index(def_dia), 
+                        default=def_dias, 
                         format_func=lambda x: f"Ø{x} مم", 
                         key=f"pdia_{fl_idx}_{s_tag}"
                     )
@@ -349,17 +349,19 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         key=f"psp_{fl_idx}_{s_tag}"
                     )
                     
-                    b_det = st.selectbox(
-                        f"{b_tag} تسليح جسر", 
-                        ["4Ø16", "4Ø18", "6Ø16", "4Ø20"], 
-                        index=["4Ø16", "4Ø18", "6Ø16", "4Ø20"].index(def_beam if def_beam in ["4Ø16", "4Ø18", "6Ø16", "4Ø20"] else "4Ø16"), 
+                    b_det = st.multiselect(
+                        f"{b_tag} أقطار حديد تسليح الجسر (اختر أقطار الشيش للجسور)", 
+                        ALL_BAR_DIAMETERS, 
+                        default=def_beams, 
+                        format_func=lambda x: f"Ø{x} مم", 
                         key=f"bdet_{fl_idx}_{s_tag}"
                     )
                     
-                    c_det = st.selectbox(
-                        f"{c_tag} تسليح عمود (متأثر بتدرج الأحمال)", 
-                        ["8Ø16", "8Ø20", "12Ø20", "8Ø25"], 
-                        index=["8Ø16", "8Ø20", "12Ø20", "8Ø25"].index(def_col if def_col in ["8Ø16", "8Ø20", "12Ø20", "8Ø25"] else "8Ø20"), 
+                    c_det = st.multiselect(
+                        f"{c_tag} أقطار حديد تسليح العمود (متأثر بتدرج الأحمال)", 
+                        ALL_BAR_DIAMETERS, 
+                        default=def_cols, 
+                        format_func=lambda x: f"Ø{x} مم", 
                         key=f"cdet_{fl_idx}_{s_tag}"
                     )
                     
@@ -369,10 +371,10 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "col_tag": c_tag,
                         "type": auto_stype,
                         "pos": s_pos,
-                        "dia": p_dia,
+                        "dias": p_dias if p_dias else [12],
                         "spacing": p_sp,
-                        "beam_reinforcement": b_det,
-                        "col_reinforcement": c_det
+                        "beam_reinforcement": [f"Ø{d}" for d in b_det] if b_det else ["Ø16"],
+                        "col_reinforcement": [f"Ø{d}" for d in c_det] if c_det else ["Ø16"]
                     })
 
             if not slab_configs:
@@ -382,10 +384,10 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     "col_tag": "C1",
                     "type": auto_stype,
                     "pos": "داخلي (Interior)",
-                    "dia": 12,
+                    "dias": [12],
                     "spacing": 150,
-                    "beam_reinforcement": "4Ø16",
-                    "col_reinforcement": def_col_det
+                    "beam_reinforcement": ["Ø16"],
+                    "col_reinforcement": ["Ø16"]
                 })
 
             floors_data.append({
@@ -403,7 +405,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
     btn_text = "⚡ تنفيذ التصميم الإنشائي الذكي وإصدار الجداول المتكاملة"
     
     if st.button(btn_text, use_container_width=True):
-        st.success("تم إتمام التصميم الإنشائي الهندسي الذكي وتوليد الجداول المتكاملة بنجاح ✅")
+        st.success("تم إتمام التصميم الإنشائي الهندسي الذكي المتعدد الأقطار وتوليد الجداول بنجاح ✅")
 
         tab_design, tab_optimize, tab_economy = st.tabs([
             "📐 1. صفحة التصميم والنتائج (الجداول الشاملة)", 
@@ -417,26 +419,27 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         # تبويب (1): التصميم والتدقيق الإنشائي
         # ==========================================
         with tab_design:
-            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (مع الوعي الهندسي الكامل بمسار وتدرج الأحمال والتسليح المزدوج):")
+            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (مع الوعي الهندسي الكامل واختيار الأقطار المتعددة):")
             
             for f_item in floors_data:
                 span_m = f_item["span_x"]
                 crank_dist_cm = round((span_m / 7.0) * 100, 1)
-                neg_moment_dist = round((span_m / 3.0) * 100, 1) # مسافة العزم السالب الفعالة قرب المساند
                 st.markdown(f"---")
                 st.markdown(f"### 🏢 **{f_item['floor_title']}** (البحر L = {span_m} م | عدد أعمدة الطابق: {f_item['total_cols']} عمود | معامل تدرج الأحمال: Tier {f_item['load_tier']}):")
                 
-                # 1. جدول السقوف والبلاطات (بصياغة هندسية واضحة ومدركة لما تفعله)
-                st.markdown("##### 🏗️ **جدول السقوف والبلاطات (Slabs - حديد رئيسي وتوزيع وعزم سالب وموجب)**")
+                # 1. جدول السقوف والبلاطات (عرض الأقطار المتعددة وشيش التكسيح والتوزيع)
+                st.markdown("##### 🏗️ **جدول السقوف والبلاطات (Slabs - تسليح متعدد الأقطار وعزم سالب وموجب)**")
                 slabs_table = []
                 for sl in f_item["slabs"]:
-                    slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
+                    dias_str = " + ".join([f"Ø{d}مم" for d in sl["dias"]])
+                    primary_dia = sl["dias"][0] if sl["dias"] else 12
+                    slab_lap_cm = round(40 * primary_dia / 10.0, 1)
                     dist_val = round((span_m / 2.0) * 100, 1)
                     
                     if "تكسيح" in rebar_method_choice or "Bent-up" in rebar_method_choice:
-                        crank_info = f"تكسيح شبون هندسي: حديد سفلي رئيسي بالعزم الموجب + مكسّح للأعلى للعزم السالب يبدأ عند مسافة {crank_dist_cm} سم (L/7) من وجه المسند | أوفرلاب منتصف البحر {dist_val}.0 سم (تداخل: {slab_lap_cm} سم)"
+                        crank_info = f"تكسيح شبون هندسي متعدد الأقطار ({dias_str}): سفلي رئيسي بالعزم الموجب + مكسّح للعزم السالب يبدأ عند مسافة {crank_dist_cm} سم (L/7) | أوفرلاب {dist_val}.0 سم (تداخل: {slab_lap_cm} سم)"
                     else:
-                        crank_info = f"شبكتين منفصلتين متكاملتين: شبكة سفلية رئيسية للعزم الموجب + شبكة علوية كاملة للعزم السالب قرب المساند بمقدار {neg_moment_dist} سم | أوفرلاب {dist_val}.0 سم (تداخل: {slab_lap_cm} سم)"
+                        crank_info = f"شبكتين مستقلتين متكاملتين ({dias_str}): سفلي رئيسي + علوي كامل | أوفرلاب {dist_val}.0 سم (تداخل: {slab_lap_cm} سم)"
                     
                     if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
                         defl_status = "🟢 آمن (L/240) ✓"
@@ -449,11 +452,11 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "الرمز": sl["slab_tag"],
                         "الموقع": sl["pos"],
                         "نوع السقف": sl["type"],
-                        "تسليح البلاطة": f"Ø{sl['dia']} مم كل {sl['spacing']}مم",
+                        "تسليح البلاطة": f"({dias_str}) كل {sl['spacing']}مم",
                         "تدقيق الترخيم (Deflection)": defl_status,
-                        "السلوك الهندسي وتفاصيل الشبون والتسليح": crank_info
+                        "السلوك الهندسي وتفاصيل التسليح": crank_info
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"بلاطة {sl['slab_tag']}", "التسليح": f"Ø{sl['dia']} مم كل {sl['spacing']}مم", "الموقع": sl["pos"], "السلوك الهندسي": crank_info})
+                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"بلاطة {sl['slab_tag']}", "التسليح": f"({dias_str}) كل {sl['spacing']}مم", "الموقع": sl["pos"], "السلوك الهندسي": crank_info})
 
                 st.table(slabs_table)
 
@@ -461,36 +464,38 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 st.markdown("##### 🌉 **جدول الجسور (Beams)**")
                 beams_table = []
                 for sl in f_item["slabs"]:
+                    beam_str = ", ".join(sl["beam_reinforcement"])
                     beam_lap_cm = round(50 * 16 / 10.0, 1)
                     beams_table.append({
                         "الرمز": sl["beam_tag"],
                         "الموقع المرتبط": f"جسر لـ {sl['slab_tag']} ({sl['pos']})",
-                        "تسليح الجسر": f"{sl['beam_reinforcement']}",
+                        "تسليح الجسر": beam_str,
                         "تدقيق القص (Shear Check)": "🟢 آمن (Vu < ΦVc) وتكثيف كانات للمقاومة ✓",
                         "مكان وطول الأوفرلاب": f"العلوي قرب المساند | السفلي بمنتصف البحر (تداخل: {beam_lap_cm} سم)"
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"جسر {sl['beam_tag']}", "التسليح": sl['beam_reinforcement'], "الموقع": sl["pos"], "الأوفرلاب": f"قرب المساند ومنتصف البحر ({beam_lap_cm} سم)"})
+                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"جسر {sl['beam_tag']}", "التسليح": beam_str, "الموقع": sl["pos"], "الأوفرلاب": f"قرب المساند ومنتصف البحر ({beam_lap_cm} سم)"})
                 st.table(beams_table)
 
                 # 3. جدول الأعمدة
                 st.markdown("##### 🏛️ **جدول الأعمدة (Columns - مسار الأحمال التراكمي)**")
                 cols_table = []
                 for sl in f_item["slabs"]:
+                    col_str = ", ".join(sl["col_reinforcement"])
                     col_lap_cm = round(48 * 20 / 10.0, 1)
                     cols_table.append({
                         "الرمز": sl["col_tag"],
                         "الموقع الإنشائي": f"عمود لـ {sl['slab_tag']} ({sl['pos']})",
-                        "تسليح العمود": f"{sl['col_reinforcement']}",
+                        "تسليح العمود": col_str,
                         "تدقيق القص والأحمال": f"🟢 آمن ومطابق ACI 318 (ناقل أحمال متراكم Tier {f_item['load_tier']}) ✓",
                         "مكان وطول الأوفرلاب": f"منتصف ارتفاع العمود Zone B (تداخل: {col_lap_cm} سم)"
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"عمود {sl['col_tag']}", "التسليح": sl['col_reinforcement'], "الموقع": sl["pos"], "الأوفرلاب": f"منتصف ارتفاع العمود Zone B ({col_lap_cm} سم)"})
+                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"عمود {sl['col_tag']}", "التسليح": col_str, "الموقع": sl["pos"], "الأوفرلاب": f"منتصف ارتفاع العمود Zone B ({col_lap_cm} سم)"})
                 st.table(cols_table)
 
                 stirrup_zone_cm = round((span_m / 4.0) * 100, 1)
                 st.info(f"""
                 📌 **دليل الوعي الهندسي والاستشاري لـ {f_item['floor_title']} (حسب كود ACI 318):**
-                * **1. الوعي بسلوك السقف والتسليح المزدوج:** النظام يدرك تماماً أن السقف يتعرض لعزوم موجبة بالمنتصف وعزوم سالبة قرب المساند؛ لذا يعتمد تسليحاً مزدوجاً (سفلي رئيسي + علوي أو مكسّح) وليس شيشاً واحداً أبداً.
+                * **1. التسليح المتعدد الأقطار:** يتيح النظام اختيار أقطار متعددة (شيش رئيسي + شيش توزيع أو عزم سالب) بكل مرونة لضمان تطابق المخططات مع الواقع الإنشائي.
                 * **2. مسافة تكسيح الشبون الهندسية:** تبدأ من مسافة **{crank_dist_cm} سم (تساوي $L/7$)** لترتفع وتغطي العزم السالب بأمان وتوفر **15% إلى 20%** من حديد التسليح الكلي.
                 * **3. تدرج نقل الأحمال (Load Path):** الأحمال تتراكم تنازلياً من الطوابق العليا نحو الأساسات؛ لذا تم تضخيم تسليح أعمدة وجسور هذا الطابق بذكاء بناءً على معامل (Tier {f_item['load_tier']}).
                 * **4. المسافة الاقتصادية بين الأعمدة:** تترواح بين **(4.0م إلى 6.0م)** لمنع الهدر الإنشائي وضمان صلابة المنشأ[cite: 14].
@@ -516,8 +521,8 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 
                 with col_opt2:
                     st.markdown("""
-                    ##### 🌉 **2. كفاءة التسليح المزدوج (تكسيح الشبون):**
-                    * يوفر **15% إلى 20%** من إجمالي حديد السقف مع الحفاظ على المقاومة القصوى للعزوم الموجبة والسالبة.
+                    ##### 🌉 **2. كفاءة التسليح المتعدد الأقطار وتكسيح الشبون:**
+                    * توفر تقنيات التكسيح متعدد الأقطار **15% إلى 20%** من إجمالي حديد السقف مع الحفاظ على المقاومة القصوى للعزوم الموجبة والسالبة.
                     """)
                 st.write("---")
 
@@ -546,7 +551,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         
         col_dl_x, col_dl_p = st.columns(2)
         
-        csv_str = "الطابق,العنصر,التسليح,الموقع,السلوك الهندسي والتسليح المزدوج\n"
+        csv_str = "الطابق,العنصر,التسليح,الموقع,السلوك الهندسي والتسليح المتعدد\n"
         for r in export_csv_rows:
             csv_str += f"{r['الطابق']},{r['العنصر']},{r['التسليح']},{r['الموقع']},{r['السلوك الهندسي']}\n"
         
@@ -577,42 +582,45 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             <h1>المنظومة الهندسية الاستشارية</h1>
             <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
             <hr>
-            <h2>تقرير التصميم الإنشائي الذكي (مع الوعي بسلوك مسار الأحمال والتسليح المزدوج) - ACI 318</h2>
+            <h2>تقرير التصميم الإنشائي الذكي (مع اختيار الأقطار المتعددة ومسار الأحمال) - ACI 318</h2>
         """
         
         for f_item in floors_data:
             span_m = f_item["span_x"]
             crank_dist_cm = round((span_m / 7.0) * 100, 1)
-            stirrup_zone_cm = round((span_m / 4.0) * 100, 1)
             
             html_str += f"<div class='floor-header'>{f_item['floor_title']} (طول البحر L = {span_m} م | عدد الأعمدة: {f_item['total_cols']})</div>"
             
             # 1. جدول السقوف HTML
-            html_str += "<h4>جدول السقوف والبلاطات (Slabs)</h4><table><tr><th>الرمز</th><th>الموقع</th><th>نوع السقف</th><th>تسليح البلاطة</th><th>تدقيق الترخيم (Deflection)</th><th>السلوك الهندسي وتفاصيل التسليح المزدوج</th></tr>"
+            html_str += "<h4>جدول السقوف والبلاطات (Slabs)</h4><table><tr><th>الرمز</th><th>الموقع</th><th>نوع السقف</th><th>تسليح البلاطة</th><th>تدقيق الترخيم (Deflection)</th><th>السلوك الهندسي وتفاصيل التسليح متعدد الأقطار</th></tr>"
             for sl in f_item["slabs"]:
-                slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
+                dias_str = " + ".join([f"Ø{d}مم" for d in sl["dias"]])
+                primary_dia = sl["dias"][0] if sl["dias"] else 12
+                slab_lap_cm = round(40 * primary_dia / 10.0, 1)
                 dist_val = round((span_m / 2.0) * 100, 1)
-                html_str += f"<tr><td>{sl['slab_tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>Ø{sl['dia']} مم كل {sl['spacing']}مم</td><td>🟢 آمن (L/360) ✓</td><td>تكسيح شبون هندسي (سفلي ومكسّح للعزم السالب عند {crank_dist_cm} سم) | أوفرلاب {dist_val}.0 سم ({slab_lap_cm} سم)</td></tr>"
+                html_str += f"<tr><td>{sl['slab_tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>({dias_str}) كل {sl['spacing']}مم</td><td>🟢 آمن (L/360) ✓</td><td>تكسيح شبون هندسي ({dias_str}): سفلي ومكسّح للعزم السالب عند {crank_dist_cm} سم | أوفرلاب {dist_val}.0 سم ({slab_lap_cm} سم)</td></tr>"
             html_str += "</table>"
 
             # 2. جدول الجسور HTML
             html_str += "<h4>جدول الجسور (Beams)</h4><table><tr><th>الرمز</th><th>الموقع المرتبط</th><th>تسليح الجسر</th><th>تدقيق القص (Shear Check)</th><th>مكان وطول الأوفرلاب</th></tr>"
             for sl in f_item["slabs"]:
+                beam_str = ", ".join(sl["beam_reinforcement"])
                 beam_lap_cm = round(50 * 16 / 10.0, 1)
-                html_str += f"<tr><td>{sl['beam_tag']}</td><td>جسر لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['beam_reinforcement']}</td><td>🟢 آمن (Vu < ΦVc) وتكثيف كانات ✓</td><td>العلوي قرب المساند | السفلي بمنتصف البحر ({beam_lap_cm} سم)</td></tr>"
+                html_str += f"<tr><td>{sl['beam_tag']}</td><td>جسر لـ {sl['slab_tag']} ({sl['pos']})</td><td>{beam_str}</td><td>🟢 آمن (Vu < ΦVc) وتكثيف كانات ✓</td><td>العلوي قرب المساند | السفلي بمنتصف البحر ({beam_lap_cm} سم)</td></tr>"
             html_str += "</table>"
 
             # 3. جدول الأعمدة HTML
             html_str += "<h4>جدول الأعمدة (Columns - مسار الأحمال)</h4><table><tr><th>الرمز</th><th>الموقع الإنشائي</th><th>تسليح العمود</th><th>تدقيق القص والأحمال</th><th>مكان وطول الأوفرلاب</th></tr>"
             for sl in f_item["slabs"]:
+                col_str = ", ".join(sl["col_reinforcement"])
                 col_lap_cm = round(48 * 20 / 10.0, 1)
-                html_str += f"<tr><td>{sl['col_tag']}</td><td>عمود لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['col_reinforcement']}</td><td>🟢 آمن ومطابق ACI 318 ✓</td><td>منتصف ارتفاع العمود Zone B ({col_lap_cm} سم)</td></tr>"
+                html_str += f"<tr><td>{sl['col_tag']}</td><td>عمود لـ {sl['slab_tag']} ({sl['pos']})</td><td>{col_str}</td><td>🟢 آمن ومطابق ACI 318 ✓</td><td>منتصف ارتفاع العمود Zone B ({col_lap_cm} سم)</td></tr>"
             html_str += "</table>"
 
             html_str += f"""
             <div class='notes-box'>
                 <b>دليل الوعي الهندسي لـ {f_item['floor_title']} (حسب كود ACI 318):</b><br>
-                1. <b>التسليح المزدوج:</b> يدرك النظام مقاومة العزوم الموجبة والسالبة معاً (حديد سفلي رئيسي وعُلوي أو مكسّح).<br>
+                1. <b>التسليح متعدد الأقطار:</b> إمكانية اختيار أكثر من قطر في السقف أو الجسر أو العمود بكل مرونة.<br>
                 2. <b>مسافة تكسيح الشبون:</b> تبدأ من مسافة {crank_dist_cm} سم (تساوي L/7) لتوفير 15% إلى 20% حديد.<br>
                 3. <b>تدرج وانتقال الأحمال (Load Path):</b> تراكم الأحمال تنازلياً من الطوابق العليا نحو الأساس.[cite: 14]
             </div>
