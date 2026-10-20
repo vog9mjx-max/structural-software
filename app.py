@@ -231,14 +231,10 @@ elif "تدقيق" in mode:
     st.header("🏢 تدقيق عناصر المبنى الإنشائية (أعمدة، جسور، سقوف) بالطريقة الهندسية الدارجة")
     
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    with col_m1:
-        fc = st.number_input("مقاومة الخرسانة f'c (MPa)", value=28.0)
-    with col_m2:
-        fy = st.number_input("إجهاد خضوع الحديد fy (MPa)", value=420.0)
-    with col_m3:
-        dead_load = st.number_input("الأحمال الميتة الإضافية (كاشي وتراب) kN/m²", value=2.5)
-    with col_m4:
-        live_load = st.number_input("الحمل الحي (أثاث وسكن) kN/m²", value=3.0)
+    with col_m1: fc = st.number_input("مقاومة الخرسانة f'c (MPa)", value=28.0)
+    with col_m2: fy = st.number_input("إجهاد خضوع الحديد fy (MPa)", value=420.0)
+    with col_m3: dead_load = st.number_input("الأحمال الميتة الإضافية (كاشي وتراب) kN/m²", value=2.5)
+    with col_m4: live_load = st.number_input("الحمل الحي (أثاث وسكن) kN/m²", value=3.0)
 
     st.write("---")
     st.subheader("2️⃣ تدقيق السقوف (Slabs & Deflection Check)")
@@ -306,43 +302,146 @@ elif "تدقيق" in mode:
         col_results.append({"العمود": f"C{k+1}", "المكان": c_loc, "الأبعاد": f"{c_dim1}x{c_dim2} mm", "الحمل المحسوب": f"{P_u:.1f} kN", "الحالة": col_status, "الحديد": col_reb})
 
 # ==========================================
-# 3. قسم حساب الكميات وهندسة الكلف (BOQ)
+# 3. قسم حساب الكميات وهندسة الكلف (BOQ) مع تفاصيل السوق العراقي
 # ==========================================
 elif "حساب الكميات" in mode:
     st.header("📊 قسم حساب الكميات والمواد الإنشائية (BOQ - Bill of Quantities)")
-    st.write("إشراف وتطوير: م. محمد ذنون عبد شريف - حساب كميات المواد للموقع بدقة:")
+    st.markdown("إشراف وتطوير: **م. محمد ذنون عبد شريف** | حساب كميات المواد للموقع بدقة حسب السوق العراقي:")
     st.write("---")
 
     boq_type = st.selectbox(
         "اختر مادة أو عنصر البناء:",
         [
-            "🧱 الطابوق والبنّاء (Bricks & Masonry)", 
+            "🧱 الطابوق والبلوك (Bricks & Blocks)", 
             "🏗️ الكونكريت والقوالب للأعمدة (Columns Concrete & Formwork)", 
-            "🧪 مواد الإنهاءات (أسمنت، رمل، بورك، جبس)", 
+            "🏛️ الأرضيات (كاشي، مرمر، بورسلين)", 
+            "🎨 سيراميك الجدران والأرضيات",
+            "🧪 مواد الإنهاءات الشائعة (أسمنت، رمل، بورك، جبس)", 
             "⚙️ حديد التسليح التقديري (Rebar Estimation)"
         ]
     )
 
-    if "الطابوق" in boq_type:
-        st.subheader("🧱 حساب كميات الطابوق (مع سمايلات الجمالية للموقع)")
+    # 1. قسم الطابوق والبلوك العراقي
+    if "الطابوق والبلوك" in boq_type:
+        st.subheader("🧱 حساب كميات الطابوق وأنواع البلوك في السوق العراقي")
         bc1, bc2, bc3 = st.columns(3)
-        with bc1: wall_area = st.number_input("مساحة الجدار الكلية (متر مربع)", min_value=1.0, value=50.0, step=1.0)
-        with bc2: wall_thickness = st.selectbox("نوع البناء (سمك الجدار)", ["جدار مفرد (12 سم)", "جدار مزدوج / حامل (24 سم)"])
-        with bc3: brick_type = st.selectbox("نوع الطابوق المستخدم", ["🧱 طابوق عراقي قياسي (24×11.5×7.5 سم)", "🧱 طابوق بلوك خرساني"])
+        with bc1: 
+            wall_area = st.number_input("مساحة الجدار الكلية (متر مربع)", min_value=1.0, value=50.0, step=1.0)
+        with bc2: 
+            brick_choice = st.selectbox(
+                "اختر نوع الطابوق أو البلوك:", 
+                [
+                    "🧱 طابوق عراقي أحمر قياسي (24 × 11.5 × 7.5 سم) - جدار مفرد 12سم",
+                    "🧱 طابوق عراقي أحمر قياسي (24 × 11.5 × 7.5 سم) - جدار مزدوج 24سم",
+                    "🧱 طابوق أصفر فرشي/ناري (24 × 11.5 × 7.5 سم)",
+                    "🧱 بلوك خرساني مجوف (40 × 20 × 20 سم)",
+                    "🧱 بلوك خرساني مجوف (40 × 20 × 15 سم)"
+                ]
+            )
+        with bc3:
+            waste_pct = st.slider("نسبة الهدر في الموقع (%)", 3, 10, 5)
 
-        if st.button("🧮 احسب كمية الطابوق والمونة"):
-            factor = 58 if "مفرد" in wall_thickness else 116
-            total_bricks = int(wall_area * factor)
-            mortar_volume = wall_area * (0.03 if "مفرد" in wall_thickness else 0.07)
+        if st.button("🧮 احسب الكميات المطلوبة بدقة"):
+            if "جدار مفرد" in brick_choice:
+                factor = 58
+                mortar_vol = wall_area * 0.03
+                title_item = "طابوق أحمر قياسي (جدار مفرد 12 سم)"
+            elif "جدار مزدوج" in brick_choice:
+                factor = 116
+                mortar_vol = wall_area * 0.07
+                title_item = "طابوق أحمر قياسي (جدار مزدوج 24 سم)"
+            elif "أصفر" in brick_choice:
+                factor = 60
+                mortar_vol = wall_area * 0.035
+                title_item = "طابوق أصفر فرشي/ناري"
+            elif "20 سم" in brick_choice:
+                factor = 12.5 # تقريباً كل م2 يحتاج 12.5 بلوكة قياسية 40x20
+                mortar_vol = wall_area * 0.02
+                title_item = "بلوك خرساني مجوف (40 × 20 × 20 سم)"
+            else:
+                factor = 12.5
+                mortar_vol = wall_area * 0.015
+                title_item = "بلوك خرساني مجوف (40 × 20 × 15 سم)"
 
-            st.success("تمت الحسابات بنجاح وإليك الكميات المطلوبة للموقع بدقة ✅")
+            net_count = int(wall_area * factor)
+            gross_count = int(net_count * (1 + waste_pct / 100.0))
+
+            st.success("تمت الحسابات الهندسية للموقع بنجاح ✅")
             
             c_res1, c_res2 = st.columns(2)
-            with c_res1: st.metric("🧱 العدد الكلي للطابوق (مع الهدر 5%)", f"{total_bricks:,} طابوقة")
-            with c_res2: st.metric("🧪 حجم المونة السمنتية المطلوبة", f"{mortar_volume:.2f} م³")
+            with c_res1: 
+                st.metric(f"🧱 العدد الكلي لـ ({title_item}) مع الهدر", f"{gross_count:,} قطعة")
+            with c_res2: 
+                st.metric("🧪 حجم المونة السمنتية اللازمة", f"{mortar_vol:.2f} م³")
             
-            st.info("💡 ملاحظة استشارية: لخلطة المونة لكل 1 متر مكعب، يفضل استخدام (4.5 كيس أسمنت + 0.52 متر مكعب رمل ناعم).")
+            st.info("💡 ملاحظة استشارية عراقية: لخلطة المونة لكل 1 متر مكعب، يُعتمد (4.5 كيس أسمنت + 0.52 متر مكعب رمل ناعم نظيف).")
 
+    # 2. قسم الأرضيات (كاشي، مرمر، بورسلين)
+    elif "الأرضيات" in boq_type:
+        st.subheader("🏛️ حساب كميات الأرضيات (كاشي، مرمر، بورسلين) وحسب القياسات العراقية")
+        
+        fc1, fc2, fc3 = st.columns(3)
+        with fc1:
+            floor_area = st.number_input("مساحة الغرف أو الصالات (متر مربع)", min_value=1.0, value=80.0, step=5.0)
+        with fc2:
+            flooring_type = st.selectbox(
+                "اختر مادة الأرضيات:",
+                [
+                    "💠 كاشي موزاييك عراقي تقليدي (30 × 30 سم)",
+                    "✨ مرمر طبيعي (بلاطات قياسية 60 × 60 سم)",
+                    "🌟 بورسلين فاخر للأرضيات (60 × 60 سم)",
+                    "🌟 بورسلين صالونات واسعة (120 × 60 سم)"
+                ]
+            )
+        with fc3:
+            wastage_tile = st.slider("نسبة الهدر والقص (%)", 5, 15, 10)
+
+        if st.button("🧮 احسب مساحة وكميات الأرضيات"):
+            gross_floor_area = floor_area * (1 + wastage_tile / 100.0)
+            st.success("تم حساب مساحات الأرضيات مع نسبة الهدر والقص بنجاح ✅")
+
+            r_f1, r_f2 = st.columns(2)
+            with r_f1:
+                st.metric("📦 المساحة الصافية مع الهدر المطلوبة للشراء", f"{gross_floor_area:.1f} م²")
+            with r_f2:
+                if "30 × 30" in flooring_type:
+                    pieces_count = int(gross_floor_area / 0.09)
+                    st.metric("🧩 عدد قطع الكاشي التقريبي", f"{pieces_count:,} كاشية")
+                elif "60 × 60" in flooring_type:
+                    pieces_count = int(gross_floor_area / 0.36)
+                    st.metric("🧩 عدد قطع المرمر/البورسلين التقريبي", f"{pieces_count:,} قطعة")
+                else:
+                    pieces_count = int(gross_floor_area / 0.72)
+                    st.metric("🧩 عدد قطع البورسلين (120×60)", f"{pieces_count:,} قطعة")
+
+            st.info("💡 ملاحظة موقعية: يُضاف لصق البورسلين/المرمر (لاصق سيراميك أو رمل وطحين أسمنت) بمعدل 1 كيس لاصق لكل 4-5 متر مربع تقريباً.")
+
+    # 3. قسم سيراميك الجدران والأرضيات
+    elif "سيراميك الجدران" in boq_type:
+        st.subheader("🎨 حساب كميات سيراميك الحمامات والمطابخ والجدران (القياسات العراقية الشائعة)")
+        
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            ceramic_area = st.number_input("مساحة الجدران أو الأرضيات المراد تغطيتها (م²)", min_value=1.0, value=40.0, step=2.0)
+        with sc2:
+            ceramic_size = st.selectbox(
+                "قياس السيراميك الشائع:",
+                [
+                    " سيراميك جدران حمامات/مطبخ (25 × 40 سم)",
+                    " سيراميك جدران فاخر (30 × 60 سم)",
+                    " سيراميك أرضيات (40 × 40 سم)"
+                ]
+            )
+        with sc3:
+            c_waste = st.slider("نسبة الهدر للقص والزوايا (%)", 5, 15, 10)
+
+        if st.button("🧮 احسب كميات السيراميك"):
+            total_cer = ceramic_area * (1 + c_waste / 100.0)
+            st.success("تم استخراج مساحة السيراميك الكلية مع الهدر بنجاح ✅")
+            st.metric("📦 المساحة الإجمالية المطلوبة للشراء", f"{total_cer:.1f} م²")
+            st.info("💡 يفضل شراء دفعة واحدة (Same Batch) لمنع اختلاف درجات الألوان (الـ Tonality) في السوق.")
+
+    # 4. الكونكريت والقوالب للأعمدة
     elif "الكونكريت والقوالب للأعمدة" in boq_type:
         st.subheader("🏗️ حساب كميات الكونكريت والقوالب للأعمدة (مربع، مستطيل، دائري)")
         
@@ -377,10 +476,11 @@ elif "حساب الكميات" in mode:
             with rc2: st.metric("🪵 مساحة القوالب (Formwork)", f"{formwork_area:.2f} م²")
             with rc3: st.metric("🔩 عدد الأعمدة المحسوبة", f"{num_columns} عمود")
 
-    elif "مواد الإنهاءات" in boq_type:
-        st.subheader("🧪 حساب مواد الإنهاءات (أسمنت، رمل، بياض بورك والجبس)")
+    # 5. مواد الإنهاءات الشائعة (لبخ وبورك)
+    elif "مواد الإنهاءات الشائعة" in boq_type:
+        st.subheader("🧪 حساب مواد الإنهاءات الشائعة في الموقع العراقي (لبخ أسمنتي وبياض بورك)")
         fin_area = st.number_input("مساحة السطح أو الجدار للإنهاء (متر مربع)", min_value=1.0, value=100.0, step=5.0)
-        fin_work = st.selectbox("نوع أعمال الإنهاء", ["لياسة / لبخ أسمنتي (سمك 2 سم)", "بياض بورك للجدران (سمك 1.5 سم)", "أرضيات كاشي أو سيراميك"])
+        fin_work = st.selectbox("نوع أعمال الإنهاء", ["لياسة / لبخ أسمنتي (سمك 2 سم) - الشائع للجدران الخارجية والخدمات", "بياض بورك للجدران الداخلية (سمك 1.5 سم) - الشائع جداً بالعراق"])
 
         if st.button("🧮 احسب مواد الإنهاءات"):
             if "لبخ" in fin_work:
@@ -389,14 +489,12 @@ elif "حساب الكميات" in mode:
                 st.success("حسابات اللبخ الأسمنتي جاهزة:")
                 st.metric("📦 أكياس الأسمنت المطلوبة", f"{math.ceil(cement_bags)} كيس")
                 st.metric("🏜️ كمية الرمل الناعم", f"{sand_m3:.2f} م³")
-            elif "بورك" in fin_work:
-                bourk_bags = fin_area * 0.25
-                st.success("حسابات بياض البورك جاهزة:")
-                st.metric("🤍 أكياس البورك المطلوبة", f"{math.ceil(bourk_bags)} كيس")
             else:
-                st.success("لحساب الكاشي أو السيراميك:")
-                st.metric("🧱 عدد المربعات مع نسبة الهدر 10%", f"{fin_area * 1.1:.1f} م² سيراميك/كاشي")
+                bourk_bags = fin_area * 0.25 # كيس البورك يغطّي تقريباً 4 متر مربع بسمك 1.5 سم
+                st.success("حسابات بياض البورك الجاهزة (حسب الاستخدام الشائع بالعراق):")
+                st.metric("🤍 أكياس البورك المطلوبة", f"{math.ceil(bourk_bags)} كيس")
 
+    # 6. حديد التسليح التقديري
     elif "حديد التسليح التقديري" in boq_type:
         st.subheader("⚙️ حساب الوزن التقديري لحديد التسليح (Rebar Tonnage)")
         element_type = st.selectbox("العنصر الإنشائي", ["سقف خرساني (Slab)", "جسر رئيسي (Beam)", "عمود (Column)"])
