@@ -6,6 +6,40 @@ import math
 st.set_page_config(page_title="المنظومة الهندسية الاستشارية - م. محمد ذنون", layout="wide")
 
 # ==========================================
+# تخصيص واجهة CSS الفاخرة (Elite Dashboard Theme)
+# ==========================================
+st.markdown("""
+    <style>
+    /* تغيير الخطوط العامة وتنسيق الخلفية */
+    .main {
+        background-color: #f8f9fa;
+    }
+    /* تنسيق البطاقات الإحصائية */
+    .metric-card {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-right: 5px solid #0d47a1;
+        margin-bottom: 15px;
+    }
+    /* تنسيق العناوين الكبرى */
+    h1, h2, h3 {
+        color: #1e293b;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
+    /* تخصيص الشريط الجانبي */
+    [data-testid="stSidebar"] {
+        background-color: #0f172a;
+        color: #ffffff;
+    }
+    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stButton button {
+        color: #ffffff;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
 # نظام حماية التطبيق بكلمة السر
 # ==========================================
 PASSWORD_KEY = "1234" 
@@ -17,14 +51,15 @@ def check_password():
     if st.session_state["password_correct"]:
         return True
 
-    st.markdown("<h2 style='text-align: center; color: #0d47a1;'>🔐 بوابة الدخول للمنظومة الهندسية الاستشارية</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-weight: bold;'>إشراف وتطوير: المهندس محمد ذنون عبد شريف</p>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>الرجاء إدخال رمز المرور السري للدخول إلى النظام:</p>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #1e3a8a;'>🔐 بوابة الدخول للمنظومة الهندسية الاستشارية</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px; font-weight: bold; color: #475569;'>إشراف وتطوير: المهندس محمد ذنون عبد شريف</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #64748b;'>الرجاء إدخال رمز المرور السري للدخول إلى النظام:</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         password_input = st.text_input("كلمة السر", type="password", key="pwd_input")
-        if st.button("تسجيل الدخول 🔓", use_container_width=True):
+        if st.button("تسجيل الدخول الاحترافي 🔓", use_container_width=True):
             if password_input == PASSWORD_KEY:
                 st.session_state["password_correct"] = True
                 st.rerun()
@@ -38,8 +73,8 @@ if not check_password():
 # ==========================================
 # واجهة التطبيق الرئيسية للمهندس محمد ذنون
 # ==========================================
-st.title("🏛️ المنظومة الهندسية الاستشارية المتكاملة (معماري + إنشائي + حساب الكميات)")
-st.markdown("### 👨‍💻 إعداد وتصميم: **المهندس محمد ذنون عبد شريف** | جامعة كربلاء")
+st.title("🏛️ المنظومة الهندسية الاستشارية المتكاملة")
+st.markdown("### 👨‍💻 إشراف وتطوير: **المهندس محمد ذنون عبد شريف** | جامعة كربلاء")
 st.write("---")
 
 if st.sidebar.button("🔒 قفل النظام وتسجيل الخروج"):
@@ -355,7 +390,7 @@ elif "حساب الكميات" in mode:
                 mortar_vol = wall_area * 0.035
                 title_item = "طابوق أصفر فرشي/ناري"
             elif "20 سم" in brick_choice:
-                factor = 12.5 # تقريباً كل م2 يحتاج 12.5 بلوكة قياسية 40x20
+                factor = 12.5
                 mortar_vol = wall_area * 0.02
                 title_item = "بلوك خرساني مجوف (40 × 20 × 20 سم)"
             else:
@@ -427,9 +462,9 @@ elif "حساب الكميات" in mode:
             ceramic_size = st.selectbox(
                 "قياس السيراميك الشائع:",
                 [
-                    " سيراميك جدران حمامات/مطبخ (25 × 40 سم)",
-                    " سيراميك جدران فاخر (30 × 60 سم)",
-                    " سيراميك أرضيات (40 × 40 سم)"
+                    "سيراميك جدران حمامات/مطبخ (25 × 40 سم)",
+                    "سيراميك جدران فاخر (30 × 60 سم)",
+                    "سيراميك أرضيات (40 × 40 سم)"
                 ]
             )
         with sc3:
@@ -490,7 +525,7 @@ elif "حساب الكميات" in mode:
                 st.metric("📦 أكياس الأسمنت المطلوبة", f"{math.ceil(cement_bags)} كيس")
                 st.metric("🏜️ كمية الرمل الناعم", f"{sand_m3:.2f} م³")
             else:
-                bourk_bags = fin_area * 0.25 # كيس البورك يغطّي تقريباً 4 متر مربع بسمك 1.5 سم
+                bourk_bags = fin_area * 0.25
                 st.success("حسابات بياض البورك الجاهزة (حسب الاستخدام الشائع بالعراق):")
                 st.metric("🤍 أكياس البورك المطلوبة", f"{math.ceil(bourk_bags)} كيس")
 
