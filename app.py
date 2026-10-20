@@ -18,7 +18,7 @@ def check_password():
         return True
 
     st.markdown("<h2 style='text-align: center; color: #0d47a1;'>🔐 بوابة الدخول للمنظومة الهندسية الاستشارية</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-weight: bold;'>إشراف ومطوير: المهندس محمد ذنون عبد شريف</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-weight: bold;'>إشراف وتطوير: المهندس محمد ذنون عبد شريف</p>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>الرجاء إدخال رمز المرور السري للدخول إلى النظام:</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -169,7 +169,7 @@ if "المعماري" in mode:
             outer_border = patches.Rectangle((0, 0), frontage, depth, linewidth=3, edgecolor='black', facecolor='none', zorder=5)
             ax.add_patch(outer_border)
 
-            ax.text(frontage/2, depth - 0.5, f"مخطط الطابق الأرضي — إشراف: م. محمد ذنون\n(واجهة {frontage}م × نزال {depth}م)", 
+            ax.text(frontage/2, depth - 0.5, f"مخطط الطابق الأرضي — إشراف وتطوير: م. محمد ذنون\n(واجهة {frontage}م × نزال {depth}م)", 
                     fontsize=12, fontweight='bold', color='black', ha='center', va='center',
                     bbox=dict(facecolor='#f8f9fa', edgecolor='black', boxstyle='round,pad=0.5'))
 
@@ -310,7 +310,7 @@ elif "تدقيق" in mode:
 # ==========================================
 elif "حساب الكميات" in mode:
     st.header("📊 قسم حساب الكميات والمواد الإنشائية (BOQ - Bill of Quantities)")
-    st.write("إشراف: م. محمد ذنون عبد شريف - حساب كميات المواد للموقع بدقة:")
+    st.write("إشراف وتطوير: م. محمد ذنون عبد شريف - حساب كميات المواد للموقع بدقة:")
     st.write("---")
 
     boq_type = st.selectbox(
@@ -378,7 +378,7 @@ elif "حساب الكميات" in mode:
             with rc3: st.metric("🔩 عدد الأعمدة المحسوبة", f"{num_columns} عمود")
 
     elif "مواد الإنهاءات" in boq_type:
-        st.subheader("🧪 حساب مواد الإنهاءات (أسمنت، رمل، بياض بورك وجبس)")
+        st.subheader("🧪 حساب مواد الإنهاءات (أسمنت، رمل، بياض بورك والجبس)")
         fin_area = st.number_input("مساحة السطح أو الجدار للإنهاء (متر مربع)", min_value=1.0, value=100.0, step=5.0)
         fin_work = st.selectbox("نوع أعمال الإنهاء", ["لياسة / لبخ أسمنتي (سمك 2 سم)", "بياض بورك للجدران (سمك 1.5 سم)", "أرضيات كاشي أو سيراميك"])
 
