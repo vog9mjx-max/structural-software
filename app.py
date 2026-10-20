@@ -69,7 +69,7 @@ mode = st.sidebar.selectbox(
         "📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)",
         "🏛️ حساب كميات وكلف واجهات البيوت والفلل (Façade Works)",
         "🏡 التصميم المعماري وتوزيع المساحات والخرائط", 
-        "🔍 تدقيق العناصر الإنشائية وانتقال الأحمال (ACI 318 & Economic Analysis)",
+        "🔍 التدقيق الإنشائي المتطور والأوفرلاب الكلي طابقاً بطابق (ACI 318)",
         "📊 حاسبة المواد التفصيلية (الطابوق، الأسمنت، الأرضيات)"
     ]
 )
@@ -112,7 +112,7 @@ prices = {
 # ==========================================
 if "جدول الكميات والكلف المعياري المفصل" in mode:
     st.header("📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)")
-    st.markdown("اختر الأقسام التي ترغب بحساب تكلفتها الفعلية في مشروعك، وحدد خيار (نعم / لا) لكل قسم:")
+    st.markdown("اختر الأقسام التي ترغب بحساب تكلفتها الفعلية في مشروعك:")
     st.write("---")
 
     modular_table_data = []
@@ -178,7 +178,7 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
 
     st.write("---")
 
-    # 4. الخرسانة والحديد (مع القطر)
+    # 4. الخرسانة والحديد
     st.subheader("4️⃣ قسم الخرسانة المسلحة وحديد التسليح")
     use_concrete = st.radio("هل تريد حساب قسم الهيكل الإنشائي (كونكريت + حديد)؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_concrete")
     struct_cost = 0
@@ -201,326 +201,172 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
 
     st.write("---")
 
-    # 5. النايلون
-    st.subheader("5️⃣ فرش النايلون (تحت الأساسات والصبة الأرضية)")
-    use_nylon = st.radio("هل تحتاج لفرش نايلون عازل للرطوبة؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_nylon")
-    nylon_cost = 0
-    if "نعم" in use_nylon:
-        nylon_area = st.number_input("مساحة الفرش (م²)", min_value=0.0, value=100.0, step=10.0, key="mod_n_area")
-        nylon_cost = nylon_area * prices["nylon_m2"]
-        modular_table_data.append({"القسم": "قسم العزل", "المادة / العنصر": "فرش نايلون عازل للرطوبة", "المساحة / البعد": f"{nylon_area} م²", "الكمية المطلوبة": f"{nylon_area} م²", "الكلفة التقديرية (د.ع)": f"{nylon_cost:,.0f}"})
-        grand_total_cost += nylon_cost
-
-    st.write("---")
-
-    # 6. الآليات
-    st.subheader("6️⃣ آليات الموقع (الحادلة والشفل)")
-    use_machinery = st.radio("هل تريد حساب تكاليف الآليات الثقيلة (الحادلة والشفل)؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_mach")
-    mach_cost = 0
-    if "نعم" in use_machinery:
-        mc1, mc2 = st.columns(2)
-        with mc1: shovel_hours = st.number_input("عدد ساعات عمل الشفل", min_value=0, value=8, step=2, key="mod_sh_hr")
-        with mc2: roller_days = st.number_input("عدد أيام عمل الحادلة (الرول)", min_value=0, value=1, step=1, key="mod_rl_day")
-
-        mach_cost = (shovel_hours * prices["shovel_hour"]) + (roller_days * prices["roller_day"])
-        modular_table_data.append({"القسم": "قسم الآليات", "المادة / العنصر": "إيجار شفل حفريات ورفع أنقاض", "المساحة / البعد": "عمل موقعي", "الكمية المطلوبة": f"{shovel_hours} ساعة", "الكلفة التقديرية (د.ع)": f"{(shovel_hours * prices['shovel_hour']):,.0f}"})
-        modular_table_data.append({"القسم": "قسم الآليات", "المادة / العنصر": "إيجار حادلة (رول) لترصيع التربة", "المساحة / البعد": "أعمال ترابية", "الكمية المطلوبة": f"{roller_days} يوم", "الكلفة التقديرية (د.ع)": f"{(roller_days * prices['roller_day']):,.0f}"})
-        grand_total_cost += mach_cost
-
-    st.write("---")
-
-    # 7. الأجور والكوادر
-    st.subheader("7️⃣ أجور الكوادر الموقعية (النجار، الحداد، والعمال)")
-    use_labor = st.radio("هل تريد حساب أجور الكوادر الحرفية والعمالة؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_labor")
-    labor_cost = 0
-    if "نعم" in use_labor:
-        lc1, lc2, lc3 = st.columns(3)
-        with lc1: carp_days = st.number_input("عدد أيام عمل النجار", min_value=0, value=10, step=2, key="mod_carp")
-        with lc2: steel_days = st.number_input("عدد أيام عمل الحداد", min_value=0, value=10, step=2, key="mod_steel_d")
-        with lc3: lab_days = st.number_input("إجمالي أيام العمالة المساعدة", min_value=0, value=30, step=5, key="mod_lab")
-
-        labor_cost = (carp_days * carpenters_daily) + (steel_days * steel_fixer_daily) + (lab_days * laborer_daily)
-        modular_table_data.append({"القسم": "قسم الأجور والكوادر", "المادة / العنصر": "أجور طاقم النجارة الإنشائية", "المساحة / البعد": "أيام عمل", "الكمية المطلوبة": f"{carp_days} يوم", "الكلفة التقديرية (د.ع)": f"{(carp_days * carpenters_daily):,.0f}"})
-        modular_table_data.append({"القسم": "قسم الأجور والكوادر", "المادة / العنصر": "أجور طاقم الحدادة الإنشائية", "المساحة / البعد": "أيام عمل", "الكمية المطلوبة": f"{steel_days} يوم", "الكلفة التقديرية (د.ع)": f"{(steel_days * steel_fixer_daily):,.0f}"})
-        modular_table_data.append({"القسم": "قسم الأجور والكوادر", "المادة / العنصر": "أجور العمالة المساعدة في الموقع", "المساحة / البعد": "إجمالي أيام", "الكمية المطلوبة": f"{lab_days} يوم", "الكلفة التقديرية (د.ع)": f"{(lab_days * laborer_daily):,.0f}"})
-        grand_total_cost += labor_cost
+    # 5. العزل والآليات
+    st.subheader("5️⃣ العزل، الآليات، وأجور الكوادر")
+    use_extras = st.radio("هل تريد حساب مواد العزل والآليات والأجور؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_ext")
+    if "نعم" in use_extras:
+        nylon_area = st.number_input("مساحة فرش النايلون (م²)", value=100.0, step=10.0)
+        nylon_c = nylon_area * prices["nylon_m2"]
+        mach_c = (8 * prices["shovel_hour"]) + (1 * prices["roller_day"])
+        lab_c = (10 * carpenters_daily) + (10 * steel_fixer_daily) + (30 * laborer_daily)
+        
+        modular_table_data.append({"القسم": "قسم العزل والآليات والكوادر", "المادة / العنصر": "فرش نايلون + آليات (شفل وفراد) + أجور عمالة", "المساحة / البعد": "شامل", "الكمية المطلوبة": "مجموع الفعاليات", "الكلفة التقديرية (د.ع)": f"{nylon_c + mach_c + lab_c:,.0f}"})
+        grand_total_cost += (nylon_c + mach_c + lab_c)
 
     st.write("---")
     if st.button("📊 إظهار الجدول المجمع والتكلفة الفعلية للمشروع", use_container_width=True):
         if not modular_table_data:
-            st.warning("⚠️ لم تقم بتفعيل أي قسم من الأقسام بالأعلى!")
+            st.warning("⚠️ لم تقم بتفعيل أي قسم بالأعلى!")
         else:
-            st.success("تم تجميع جدول كميات وكلف المشروع المعياري بنجاح تام ✅")
-            st.subheader("📑 جدول الكميات والكلف المعياري المفصل (Modular BOQ Summary):")
+            st.success("تم تجميع جدول كميات وكلف المشروع بنجاح ✅")
             st.table(modular_table_data)
-
-            st.markdown(f"""
-            ### 💰 الكلفة الإجمالية الفعلية للمشروع: **{grand_total_cost:,.0f} دينار عراقي**
-            """)
-
-            st.write("---")
-            st.subheader("📥 تنزيل التقارير المعيارية الاحترافية")
-            
-            col_dl1, col_dl2 = st.columns(2)
-            csv_content = "القسم,المادة / العنصر,المساحة / البعد,الكمية المطلوبة,الكلفة التقديرية (دينار عراقي)\n"
-            for row in modular_table_data:
-                csv_content += f"{row['القسم']},{row['المادة / العنصر']},{row['المساحة / البعد']},{row['الكمية المطلوبة']},{row['الكلفة التقديرية (د.ع)']}\n"
-            csv_content += f"التكلفة الإجمالية الفعلي,,,,{grand_total_cost:,.0f}\n"
-            
-            b64_csv = base64.b64encode(csv_content.encode('utf-8-sig')).decode()
-            with col_dl1:
-                st.markdown(f"""
-                    <a href="data:file/csv;base64,{b64_csv}" download="Muhamed_Zannon_Modular_BOQ.csv" style="text-decoration: none;">
-                        <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
-                            📊 تحميل جدول Excel (.csv) للـ BOQ المفصل
-                        </div>
-                    </a>
-                """, unsafe_allow_html=True)
-
-            html_report = f"""
-            <html dir="rtl">
-            <head><meta charset="utf-8"><title>تقرير جدول الكميات والكلف المفصل</title>
-            <style>
-                body {{ font-family: Tahoma, sans-serif; padding: 20px; color: #333; }}
-                h1 {{ color: #0f172a; text-align: center; }}
-                h3 {{ color: #475569; text-align: center; }}
-                table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-                th, td {{ border: 1px solid #cbd5e1; padding: 10px; text-align: center; }}
-                th {{ background-color: #0f172a; color: white; }}
-                .total {{ font-size: 18px; font-weight: bold; margin-top: 20px; text-align: left; color: #1e3a8a; }}
-            </style>
-            </head>
-            <body>
-                <h1>المنظومة الهندسية الاستشارية</h1>
-                <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
-                <hr>
-                <h2>تقرير جدول الكميات والكلف المعياري المفصل (Modular BOQ)</h2>
-                <table>
-                    <tr><th>القسم</th><th>المادة / العنصر</th><th>المساحة / البعد</th><th>الكمية المطلوبة</th><th>الكلفة التقديرية (د.ع)</th></tr>
-            """
-            for row in modular_table_data:
-                html_report += f"<tr><td>{row['القسم']}</td><td>{row['المادة / العنصر']}</td><td>{row['المساحة / البعد']}</td><td>{row['الكمية المطلوبة']}</td><td>{row['الكلفة التقديرية (د.ع)']}</td></tr>"
-            html_report += f"""
-                </table>
-                <div class="total">الكلفة الإجمالية للمشروع: {grand_total_cost:,.0f} دينار عراقي</div>
-            </body>
-            </html>
-            """
-            b64_pdf = base64.b64encode(html_report.encode('utf-8')).decode()
-            with col_dl2:
-                st.markdown(f"""
-                    <a href="data:text/html;base64,{b64_pdf}" download="Muhamed_Zannon_Modular_BOQ.html" style="text-decoration: none;">
-                        <div style="background-color: #334155; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
-                            📄 تحميل التقرير كملف طباعة (HTML/PDF)
-                        </div>
-                    </a>
-                """, unsafe_allow_html=True)
+            st.markdown(f"### 💰 الكلفة الإجمالية الفعلية للمشروع: **{grand_total_cost:,.0f} دينار عراقي**")
 
 # ==========================================
-# 1. قسم واجهات البيوت والفلل
+# 1. واجهات البيوت والفلل
 # ==========================================
 elif "حساب كميات وكلف واجهات البيوت والفلل" in mode:
     st.header("🏛️ حساب كميات وكلف واجهات البيوت والفلل الحديثة (Façade Works)")
     st.write("---")
-    col_fc1, col_fc2 = st.columns(2)
-    with col_fc1:
-        facade_area = st.number_input("مساحة الواجهة الخارجية الإجمالية (م²)", min_value=0.0, value=65.0, step=5.0)
-        facade_style = st.selectbox("الطراز المعماري:", ["واجهة حجر طبيعي", "واجهة ألكوبوند", "واجهة طابوق فرشي", "واجهة لبخ ملون وديكورات"])
-    with col_fc2:
-        facade_waste = st.slider("نسبة الهدر (%)", 3, 15, 8)
-        facade_extras = st.selectbox("الإضاءة والبروزات:", ["إضاءة مخفية ليد بروفايل", "بروزات وتعرجات خرسانية", "بدون ديكورات إضافية"])
-
-    if st.button("📊 احسب تكلفة وكميات الواجهة"):
-        rate = 35000 if "حجر" in facade_style else (45000 if "ألكوبوند" in facade_style else 22000)
-        tot_area = facade_area * (1 + facade_waste / 100.0)
-        tot_cost = tot_area * rate
-        st.success("تم الحساب بنجاح ✅")
-        st.metric("التكلفة الإجمالية للواجهة", f"{tot_cost:,.0f} دينار عراقي")
+    facade_area = st.number_input("مساحة الواجهة الخارجية الإجمالية (م²)", value=65.0, step=5.0)
+    facade_style = st.selectbox("الطراز:", ["واجهة حجر طبيعي", "واجهة ألكوبوند", "واجهة طابوق فرشي"])
+    if st.button("احسب الواجهة"):
+        tot_cost = facade_area * 38000
+        st.success(f"التكلفة التقديرية: {tot_cost:,.0f} دينار عراقي")
 
 # ==========================================
-# 2. قسم التصميم المعماري
+# 2. التصميم المعماري
 # ==========================================
 elif "التصميم المعماري" in mode:
-    st.header("🏡 قسم التصميم المعماري وتوزيع الفضاءات والخرائط الهندسية")
+    st.header("🏡 قسم التصميم المعماري وتوزيع الفضاءات")
     st.write("---")
     c1, c2 = st.columns(2)
-    with c1: frontage = st.number_input("عرض الواجهة (متر)", value=10.0, step=0.5)
-    with c2: depth = st.number_input("النزال (متر)", value=20.0, step=0.5)
-
-    if st.button("🎨 توليد المخطط المعماري الهندسي"):
-        fig, ax = plt.subplots(figsize=(7, 10))
-        ax.set_xlim(-0.5, frontage + 0.5)
-        ax.set_ylim(-0.5, depth + 0.5)
-        ax.set_aspect('equal')
-        ax.add_patch(patches.Rectangle((0, 0), frontage, depth, linewidth=3, edgecolor='#0f172a', facecolor='none'))
-        ax.text(frontage/2, depth - 1, f"مخطط هندسي - م. محمد ذنون\n({frontage}م × {depth}م)", fontsize=11, fontweight='bold', ha='center', va='center')
+    with c1: frontage = st.number_input("عرض الواجهة X (م)", value=10.0, step=0.5)
+    with c2: depth = st.number_input("النزال Y (م)", value=20.0, step=0.5)
+    if st.button("توليد المخطط"):
+        fig, ax = plt.subplots(figsize=(6, 8))
+        ax.add_patch(patches.Rectangle((0,0), frontage, depth, fill=False, linewidth=3))
         st.pyplot(fig)
 
 # ==========================================
-# 3. قسم التدقيق الإنشائي والتسليح وانتقال الأحمال طابقاً بطابق (ACI 318)
+# 3. التدقيق الإنشائي المتطور والأوفرلاب الكلي طابقاً بطابق (ACI 318)
 # ==========================================
-elif "تدقيق العناصر الإنشائية وانتقال الأحمال" in mode:
-    st.header("🔍 تدقيق العناصر الإنشائية، تفاصيل التسليح، وانتقال الأحمال (ACI 318)")
-    st.markdown("أدخل الأبعاد وتفاصيل أقطار التسليح والمسافات والطبقات لتدقيق الأمان، الأوفرلاب، وانتقال الأحمال طابقاً بطابق:")
+elif "التدقيق الإنشائي المتطور والأوفرلاب الكلي طابقاً بطابق" in mode:
+    st.header("🔍 التدقيق الإنشائي، تفكيك المساحات (X & Y)، وحساب الأوفرلاب الكلي لكل طابق")
+    st.markdown("إدخال أبعاد القطعة بمحاور X و Y وتوسعة المساحات ($+$)، وتتبع أوزان ومسافات الأوفرلاب لجميع الطوابق:")
     st.write("---")
     
-    col_prop1, col_prop2 = st.columns(2)
-    with col_prop1: fc = st.number_input("مقاومة الخرسانة f'c (MPa)", value=28.0, step=2.0, key="fc_str")
-    with col_prop2: fy = st.number_input("إجهاد خضوع الحديد fy (MPa)", value=420.0, step=10.0, key="fy_str")
+    # 1. تحديد أبعاد ومساحات المبنى بمحاور X و Y مع خاصية التقسيم (+)
+    st.subheader("📐 1. إدخال أبعاد المساحات على محاور X و Y (المساحات الأساسية والمضافة +)")
+    
+    col_xy1, col_xy2 = st.columns(2)
+    with col_xy1:
+        x_dim1 = st.number_input("عرض القطعة الأساسية على محور X (متر):", value=10.0, step=0.5)
+        y_dim1 = st.number_input("طول القطعة الأساسية على محور Y (متر):", value=20.0, step=0.5)
+        base_area = x_dim1 * y_dim1
+        st.info(f"المساحة الأساسية: **{base_area:.1f} م²** ({x_dim1}م × {y_dim1}م)")
+
+    with col_xy2:
+        has_extra = st.checkbox("➕ هل تحتوي البناية على مساحة إضافية مضافة (بروز / ارتداد / ملحق)؟")
+        extra_area = 0.0
+        if has_extra:
+            x_dim2 = st.number_input("عرض المساحة الإضافية (+X) (متر):", value=4.0, step=0.5)
+            y_dim2 = st.number_input("طول المساحة الإضافية (+Y) (متر):", value=5.0, step=0.5)
+            extra_area = x_dim2 * y_dim2
+            st.success(f"المساحة الإضافية: **{extra_area:.1f} م²**")
+
+    total_single_floor_area = base_area + extra_area
+    st.metric("إجمالي مساحة الطابق الواحد الصافية", f"{total_single_floor_area:.1f} م²")
 
     st.write("---")
-    st.subheader("1️⃣ بيانات وتسليح السقوف (Slab Structural Details)")
-    sc1, sc2, sc3 = st.columns(3)
-    with sc1:
-        s_type = st.selectbox("نوع السقف الإنشائي:", ["سقف مصمت (Solid Slab)", "سقف هوردي (Ribbed/Waffle Slab)", "سقف بلاطة مسطحة (Flat Plate)"])
-        lx = st.number_input("البحر القصير Lx (متر)", value=4.0, step=0.5)
-        ly = st.number_input("البحر الطويل Ly (متر)", value=5.0, step=0.5)
-    with sc2:
-        t_slab = st.number_input("سمك السقف الإجمالي (مم)", value=150.0, step=10.0)
-        s_bar_dia = st.selectbox("قطر سيخ تسليح السقف الرئيسي:", [10, 12, 16], format_func=lambda x: f"Ø{x} مم")
-    with sc3:
-        s_spacing = st.slider("المسافة بين سيخ وسيخ (مم)", min_value=100, max_value=250, value=150, step=25)
-        s_layers = st.radio("شبكة التسليح:", ["شبكة واحدة (Single Mesh)", "شبكتين - علوي وسفلي (Double Mesh)"], horizontal=True)
+    # 2. معلومات البناية وعدد الطوابق
+    st.subheader("🏛️ 2. معلومات البناية، الغرض، وعدد الطوابق")
+    b_col1, b_col2, b_col3 = st.columns(3)
+    with b_col1: bldg_purpose = st.selectbox("الغرض من البناية:", ["سكني", "تجاري / محلات", "مكاتب إدارية", "خدمي"])
+    with b_col2: total_floors = st.number_input("إجمالي عدد الطوابق (بما فيها الأرضي):", min_value=1, max_value=10, value=3, step=1)
+    with b_col3: col_count_per_floor = st.number_input("عدد الأعمدة في الطابق الواحد:", min_value=4, max_value=40, value=12, step=1)
 
     st.write("---")
-    st.subheader("2️⃣ بيانات وتسليح الجسور (Beam Structural Details)")
-    bc1, bc2, bc3 = st.columns(3)
-    with bc1:
-        b_beam = st.number_input("عرض الجسر b (مم)", value=250.0, step=50.0)
-        h_beam = st.number_input("عمق الجسر الإجمالي h (مم)", value=500.0, step=50.0)
-        span_beam = st.number_input("طول البحر الصافي للجسر (متر)", value=5.0, step=0.5)
-    with bc2:
-        bm_bar_dia = st.selectbox("قطر حديد التسليح الرئيسي السفلي/العلوي:", [12, 16, 20, 25], format_func=lambda x: f"Ø{x} مم", index=1)
-        bm_bar_count = st.number_input("عدد أسياخ التسليح الرئيسي الجسري", min_value=2, max_value=12, value=4, step=1)
-    with bc3:
-        stirrup_dia = st.selectbox("قطر الكانات/الأثاري (Stirrups):", [8, 10, 12], format_func=lambda x: f"Ø{x} مم", index=1)
-        stirrup_spacing = st.number_input("المسافة بين الكانات عند التكثيف (مم)", value=100.0, step=25.0)
+    # 3. الأقطار وتفاصيل الأوفرلاب لكل طابق
+    st.subheader("🔩 3. أقطار حديد التسليح وتحديد أطوال ومواقع الأوفرلاب (Lap Splice Details)")
+    
+    col_d1, col_d2, col_d3 = st.columns(3)
+    with col_d1:
+        col_bar_dia = st.selectbox("قطر حديد التسليح الرئيسي للأعمدة:", [16, 20, 25, 32], format_func=lambda x: f"Ø{x} مم", index=1)
+        col_bars_per_col = st.number_input("عدد الأسياخ في العمود الواحد:", min_value=4, max_value=20, value=8, step=2)
+    with col_d2:
+        beam_bar_dia = st.selectbox("قطر حديد التسليح الرئيسي للجسور:", [12, 16, 20, 25], format_func=lambda x: f"Ø{x} مم", index=1)
+    with col_d3:
+        slab_bar_dia = st.selectbox("قطر حديد تسليح السقف الرئيسي:", [10, 12, 16], format_func=lambda x: f"Ø{x} مم", index=0)
 
-    st.write("---")
-    st.subheader("3️⃣ بيانات الأعمدة وتتبع انتقال الأحمال طابقاً بطابق (Columns & Load Takedown)")
-    cc1, cc2, cc3 = st.columns(3)
-    with cc1:
-        c_w = st.number_input("عرض مقطع العمود b (مم)", value=300.0, step=50.0)
-        c_h = st.number_input("عمق مقطع العمود h (مم)", value=400.0, step=50.0)
-    with cc2:
-        col_bar_dia = st.selectbox("قطر التسليح الطولي للعمود:", [16, 20, 25, 32], format_func=lambda x: f"Ø{x} مم", index=1)
-        col_bar_count = st.number_input("عدد الأسياخ الطولية في العمود", min_value=4, max_value=20, value=8, step=2)
-    with cc3:
-        num_floors = st.number_input("إجمالي عدد الطوابق المحمولة على العمود", min_value=1, max_value=10, value=3, step=1)
-        trib_area = st.number_input("المساحة المخدومة المحمولة للعمود (م²)", value=20.0, step=2.0)
+    if st.button("🚀 حساب التدقيق الإنشائي والأوفرلاب الكلي لجميع الطوابق", use_container_width=True):
+        st.success("تم حساب جميع التفاصيل الإنشائية والأوفرلاب والانتقال الإشغالي بنجاح ✅")
 
-    st.write("---")
-    if st.button("🚀 تنفيذ التحليل والتدقيق الإنشائي وانتقال الأحمال", use_container_width=True):
-        st.success("تم الحساب والتدقيق الهندسي بنجاح وفق اشتراطات الكود الأمريكي ACI 318 ✅")
+        # حسابات الأوفرلاب الهندسية الدقيقة
+        col_lap_len_cm = round(48 * col_bar_dia / 10.0, 1) # سم
+        beam_lap_len_cm = round(50 * beam_bar_dia / 10.0, 1) # سم
+        slab_lap_len_cm = round(40 * slab_bar_dia / 10.0, 1) # سم
 
-        # 1. حسابات السقف والجسور
-        ratio = ly / lx
-        slab_behavior = "توجيهين (Two-Way Slab)" if ratio < 2.0 else "توجيه واحد (One-Way Slab)"
+        # حساب وزن الأوفرلاب الكلي للبناية
+        # وزن المتر الطولي للحديد = dia^2 / 162 (كغم/م)
+        col_unit_wt = (col_bar_dia**2) / 162.0
         
-        # طول الأوفرلاب والعكفات حسب الكود
-        s_overlap = round(48 * s_bar_dia / 10, 1)  # سم
-        bm_overlap = round(50 * bm_bar_dia / 10, 1) # سم
-        col_overlap = round(48 * col_bar_dia / 10, 1) # سم
-        
-        bm_hook = round(12 * bm_bar_dia / 10, 1) # سم
-        col_hook = round(15 * col_bar_dia / 10, 1) # سم
+        # وزن الوصلات (الأوفرلاب) الكلي بالأعمدة لجميع الطوابق
+        total_col_laps_count = col_count_per_floor * col_bars_per_col * total_floors
+        total_col_lap_weight_kg = total_col_laps_count * (col_lap_len_cm / 100.0) * col_unit_wt
+        total_col_lap_cost = (total_col_lap_weight_kg / 1000.0) * live_steel_price
 
-        st.subheader("📑 1. جدول التدقيق الإنشائي التفصيلي (Structural & Reinforcement Check):")
+        st.subheader("📑 1. جدول حسابات الأوفرلاب والتداخل الكلي لجميع الطوابق (Lap Splice Summary):")
         
-        check_table = [
+        lap_summary_table = [
             {
-                "العنصر الإنشائي": f"السقف ({s_type})",
-                "الأبعاد والبحور": f"Lx={lx}م, Ly={ly}م | سمك={t_slab}مم ({slab_behavior})",
-                "التسليح والمسافات": f"Ø{s_bar_dia} كل {s_spacing}مم ({s_layers})",
-                "طول الأوفرلاب (Lap Splice)": f"{s_overlap} سم (48Ø)",
-                "طول العكفة (Standard Hook)": "90° بعمق 15 سم بنهاية البحر",
-                "الحالة الإنشائية": "✅ آمن للهبوط والانحناء (Safe)",
-                "ملاحظات الكود الهندسية": "السمك والتسليح يحققان متطلبات Deflection والحد الأدنى للتسليح الشمسي والحراري."
+                "العنصر الإنشائي": "الأعمدة (Columns)",
+                "طول الأوفرلاب الموصى به": f"{col_lap_len_cm} سم (48Ø)",
+                "موقع وضع الأوفرلاب في الطابق": "في ثلث ارتفاع العمود الأوسط (Zone B)",
+                "إجمالي كمية الأوفرلاب الكلية": f"~{total_col_lap_weight_kg:,.1f} كغم ({total_col_lap_weight_kg/1000:.2f} طن)",
+                "الكلفة المادية للأوفرلاب (د.ع)": f"{total_col_lap_cost:,.0f} د.ع"
             },
             {
-                "العنصر الإنشائي": "الجسر الإنشائي (Beam)",
-                "الأبعاد والبحور": f"مقطع {b_beam}×{h_beam}مم | بحر {span_beam}م",
-                "التسليح والمسافات": f"{bm_bar_count} Ø{bm_bar_dia} رئيسي | كانات Ø{stirrup_dia} كل {stirrup_spacing}مم",
-                "طول الأوفرلاب (Lap Splice)": f"{bm_overlap} سم (50Ø في مناطق الضغط)",
-                "طول العكفة (Standard Hook)": f"{bm_hook} سم (12d_b عكفة زاوية قائمة)",
-                "الحالة الإنشائية": "✅ آمن للقص والعزم (Safe)",
-                "ملاحظات الكود الهندسية": "مساحة التسليح بين Min & Max Rho، وتكثيف الكانات يضمن حماية منطقة القص عند المرتكزات."
+                "العنصر الإنشائي": "الجسور (Beams)",
+                "طول الأوفرلاب الموصى به": f"{beam_lap_len_cm} سم (50Ø)",
+                "موقع وضع الأوفرلاب في الطابق": "العلوي: منتصف البحر | السفلي: قرب المرتكزات",
+                "إجمالي كمية الأوفرلاب الكلية": "تضيف حوالي 8% من وزن حديد الجسور الإجمالي",
+                "الكلفة المادية للأوفرلاب (د.ع)": "محسوبة ضمن هدر الجسور القياسي"
             },
             {
-                "العنصر الإنشائي": "العمود الإنشائي (Column)",
-                "الأبعاد والبحور": f"مقطع {c_w}×{c_h}مم | لعدد {num_floors} طوابق",
-                "التسليح والمسافات": f"{col_bar_count} Ø{col_bar_dia} طولي",
-                "طول الأوفرلاب (Lap Splice)": f"{col_overlap} سم (48Ø في منتصف ارتفاع العمود)",
-                "طول العكفة (Standard Hook)": f"{col_hook} سم (رجل الأشاير داخل الأساس)",
-                "الحالة الإنشائية": "✅ آمن للتحمل المحوري (Safe)",
-                "ملاحظات الكود الهندسية": "نسبة التسليح الطولي (Ast/Ag) تقع ضمن الحدود المقبولة للكود (1% - 4%)."
+                "العنصر الإنشائي": "السقوف (Slabs)",
+                "طول الأوفرلاب الموصى به": f"{slab_lap_len_cm} سم (40Ø)",
+                "موقع وضع الأوفرلاب في الطابق": "عند مناطق عزوم الانقلاب الدنيا (1/4 البحر)",
+                "إجمالي كمية الأوفرلاب الكلية": "تضيف حوالي 6% من وزن شبكة السقف الكلي",
+                "الكلفة المادية للأوفرلاب (د.ع)": "محسوبة ضمن هدر الشبكة الإجمالي"
             }
         ]
-        st.table(check_table)
+        st.table(lap_summary_table)
 
-        # 2. جدول انتقال الأحمال طابقاً بطابق
+        # 2. جدول تتبع الطوابق والأحمال الصافية بمساحات X و Y
         st.write("---")
-        st.subheader("🪜 2. جدول تتبع انتقال الأحمال من طابق إلى طابق (Load Takedown Schedule):")
+        st.subheader("🪜 2. جدول الأحمال الصافية المنتقلة طابقاً بطابق (على مساحة X × Y):")
         
-        dead_load_per_m2 = (t_slab / 1000.0) * 25.0 + 2.5 # وزن الخرسانة + القواطع والإنهاءات (kN/m²)
-        live_load_per_m2 = 2.0 # حمل حي سكني (kN/m²)
-        total_slab_load_m2 = 1.2 * dead_load_per_m2 + 1.6 * live_load_per_m2
+        unit_dl = 3.2 # kN/m2
+        unit_ll = 2.0 if "سكني" in bldg_purpose else 4.0 # kN/m2
+        tot_u = 1.2 * unit_dl + 1.6 * unit_ll
         
-        load_per_floor_column = total_slab_load_m2 * trib_area # الحمل المنتقل للعمود من الطابق الواحد (kN)
+        load_per_fl = total_single_floor_area * tot_u
+        cum_load_all = 0.0
         
-        col_load_schedule = []
-        cum_load = 0.0
-        
-        for fl in range(num_floors, 0, -1):
-            cum_load += load_per_floor_column
-            # التحقق من إجهاد العمود
-            col_area_m2 = (c_w * c_h) / 1e6
-            capacity_kn = 0.40 * fc * (col_area_m2 * 1000) * 1000 / 1000 # قدرة تحمّل الخرسانة التقريبية (kN)
-            status = "✅ آمن ومريح" if capacity_kn > cum_load else "⚠️ ينبغي زيادة المقطع أو زيادة التسليح"
-            
-            fl_name = "الطابق الأخير / السطح" if fl == num_floors else (f"الطابق {fl}" if fl > 1 else "الطابق الأرضي (Ground Floor)")
-            col_load_schedule.append({
-                "مستوى الطابق": fl_name,
-                "الحمل المضاف من السقف (kN)": f"{load_per_floor_column:.1f} kN",
-                "الحمل التراكمي النازل للأسفل (kN)": f"{cum_load:.1f} kN (~{cum_load/10:.1f} طن)",
-                "إجهاد العمود والقدرة الإنشائية": f"تحمل المقطع ~{capacity_kn:.0f} kN",
-                "تقييم مقطع العمود": status
+        floor_tak_table = []
+        for fl in range(total_floors, 0, -1):
+            cum_load_all += load_per_fl
+            fl_title = "الطابق الأرضي (Ground Floor)" if fl == 1 else (f"الطابق ({fl})" if fl < total_floors else "السطح / السقف الأخير")
+            floor_tak_table.append({
+                "الطابق": fl_title,
+                "المساحة المخدومة (X × Y)": f"{total_single_floor_area:.1f} م²",
+                "حمل الطابق الصافي": f"{load_per_fl:,.1f} kN",
+                "الحمل التراكمي النازل للأعمدة": f"{cum_load_all:,.1f} kN (~{cum_load_all/10:.1f} طن)",
+                "نصيب العمود الواحد": f"{(cum_load_all / col_count_per_floor):,.1f} kN"
             })
 
-        st.table(col_load_schedule)
-
-        # 3. جدول التحليل الاقتصادي وتوصيات التسليح الاقتصادي
-        st.write("---")
-        st.subheader("💡 3. جدول التحليل الاقتصادي (التسليح المختار مقابل التسليح الاقتصادي المثالي):")
-        
-        # حساب كميات وتكلفة بالحديد
-        selected_col_steel_area = col_bar_count * (math.pi * (col_bar_dia**2) / 4)
-        econ_col_steel_count = max(4, int(math.ceil((0.01 * c_w * c_h) / (math.pi * (16**2) / 4))))
-        
-        econ_table = [
-            {
-                "العنصر": "تسليح السقف",
-                "التسليح الحالي المختار": f"Ø{s_bar_dia} كل {s_spacing}مم ({s_layers})",
-                "التسليح الاقتصادي الموصى به": "Ø10 كل 200مم (شبكة واحدة)" if t_slab <= 150 else "Ø12 كل 200مم (شبكتين)",
-                "التقييم الاقتصادي": "✅ تسليح اقتصادي متوازن" if s_spacing >= 150 else "⚠️ يوجد زيادة في التسليح عن الحاجة",
-                "توصية التوفير المالي": "توسيع المسافة بين الأسياخ إلى 200 مم يوفر حوالي 12% من حديد التسليح الكلي للسقف."
-            },
-            {
-                "العنصر": "تسليح الجسور",
-                "التسليح الحالي المختار": f"{bm_bar_count} Ø{bm_bar_dia}",
-                "التسليح الاقتصادي الموصى به": "4 Ø16 (للبحور حتى 5 أمتار)",
-                "التقييم الاقتصادي": "✅ اقتصادي" if (bm_bar_count <= 4 and bm_bar_dia <= 16) else "⚠️ زيادة عن الحد الاقتصادي الأدنى",
-                "توصية التوفير المالي": "اعتماد 4 أشرطة Ø16 يغني عن استخدام أقطار أكبر للبحور السكنية ويوفر كلفة الشراء."
-            },
-            {
-                "العنصر": "تسليح الأعمدة",
-                "التسليح الحالي المختار": f"{col_bar_count} Ø{col_bar_dia}",
-                "التسليح الاقتصادي الموصى به": f"{econ_col_steel_count} Ø16 (نسبة 1% كافية جداً)",
-                "التقييم الاقتصادي": "✅ اقتصادي ومثالي" if col_bar_dia == 16 else "⚠️ يمكن تقليل قطر السيخ للحد الاقتصادي",
-                "توصية التوفير المالي": f"تقليل التسليح للحد الاقتصادي يقلل وزن حديد الأعمدة بمقدار ~150 كغم/عمود (توفير حوالي 150,000 د.ع لكل عمود)."
-            }
-        ]
-        st.table(econ_table)
+        st.table(floor_tak_table)
 
 # ==========================================
 # 4. حاسبة المواد التفصيلية
