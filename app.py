@@ -253,7 +253,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 التدقيق والتحليل الإنشائي والتوليد الذكي التلقائي (ACI 318)")
-    st.markdown("اختر نمط العمل (التصميم والتوليد التلقائي الشامل لجميع الطوابق والبلاطات والجسور والأعمدة، أو التدقيق اليدوي):")
+    st.markdown("اختر نمط العمل (التصميم والتوليد التلقائي الشامل، أو التدقيق اليدوي المتقدم مع خانات الفحص المتعددة S1, S2, S3):")
     st.write("---")
 
     auto_design = st.toggle("⚡ تفعيل نظام التوليد والتصميم الإنشائي الذكي التلقائي (Auto-Design Wizard)", value=True)
@@ -267,7 +267,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
         "سقف بلاطة مسطحة بدون جسور (Flat Plate)",
         "سقف مسطح مع سقوط (Flat Slab with Drop Panel)"
     ]
-    SLAB_POSITIONS = ["داخلي (Interior)", "خارجي / حافة (Exterior / Edge)", "زاوية / ركن (Corner)"]
 
     st.write("---")
     st.subheader("🏛️ 1. البيانات العامة والأساسية للمبنى وطوابقه")
@@ -280,7 +279,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
     floors_data = []
 
     # ==========================================
-    # المسار الأول: التوليد التلقائي الذكي الشامل لكل طابق وبلاطة وجسر وعمود
+    # المسار الأول: التوليد التلقائي الشامل
     # ==========================================
     if auto_design:
         st.success("🤖 نظام التوليد التلقائي الشامل مفعل! حدد مواصفات السقوف وأعداد الجسور والأعمدة لكل طابق أدناه:")
@@ -302,7 +301,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                 st.markdown(f"**أ) نوع سقف البلاطة لـ {fl_name}:**")
                 auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
-                st.markdown(f"**ب) عدد الجسور والأعمدة لـ {fl_name} (لانتقال الأحمال وتحديد الأحمال الميتة والحية):**")
+                st.markdown(f"**ب) عدد الجسور والأعمدة لـ {fl_name}:**")
                 ac1, ac2 = st.columns(2)
                 with ac1:
                     auto_beams_cnt = st.number_input(f"عدد الجسور (Beams) في {fl_name}:", min_value=2, max_value=30, value=8, step=1, key=f"auto_b_{fl_idx}")
@@ -311,16 +310,16 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
             auto_slabs = [
                 {
-                    "slab_num": 1,
+                    "slab_tag": "S1 (Interior)",
                     "type": auto_stype,
                     "pos": "داخلي (Interior)",
                     "dia": 12 if fl_idx == 1 else 10,
                     "spacing": 150
                 },
                 {
-                    "slab_num": 2,
+                    "slab_tag": "S2 (Exterior / Edge)",
                     "type": auto_stype,
-                    "pos": "خارجي / حافة (Exterior / Edge)" if fl_idx == 1 else "زاوية / ركن (Corner)",
+                    "pos": "خارجي / حافة (Exterior / Edge)",
                     "dia": 12,
                     "spacing": 125
                 }
@@ -344,10 +343,10 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             })
 
     # ==========================================
-    # المسار الثاني: التدقيق والإدخال اليدوي المباشر
+    # المسار الثاني: التدقيق اليدوي المتقدم مع مربعات الاختيار (S1, S2, S3)
     # ==========================================
     else:
-        st.warning("🛠️ وضع التدقيق اليدوي مفعل! حدد كافة تفاصيل الطوابق، البلاطات، والجسور والأعمدة بنفسك.")
+        st.warning("🛠️ وضع التدقيق اليدوي المتقدم مفعل! حدد مربعات مواقع السقوف (S1, S2, S3) لكل بلاطة بنفسك.")
         if "floor_segments" not in st.session_state:
             st.session_state.floor_segments = {}
 
@@ -369,18 +368,55 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
                 st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
 
-                st.markdown(f"##### ب) السقوف وبلاطات {fl_name}:")
+                st.markdown(f"##### ب) السقوف وبلاطات {fl_name} (اختر المواقع لتوليد التسميات S1, S2, S3):")
                 sl_count = st.number_input(f"عدد البلاطات في {fl_name}:", min_value=1, max_value=8, value=2, step=1, key=f"sl_cnt_{fl_idx}")
 
                 floor_slabs = []
                 for s_idx in range(int(sl_count)):
-                    sc1, sc2, sc3, sc4 = st.columns(4)
-                    with sc1: stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
-                    with sc2: spos = st.selectbox(f"موقع البلاطة ({s_idx+1}):", SLAB_POSITIONS, index=0 if s_idx==0 else 1, key=f"spos_{fl_idx}_{s_idx}")
-                    with sc3: sdia = st.selectbox(f"قطر حديد البلاطة:", ALL_BAR_DIAMETERS, index=1, format_func=lambda x: f"Ø{x} مم", key=f"sdia_{fl_idx}_{s_idx}")
+                    st.markdown(f"**🔹 بلاطة ({s_idx + 1}):**")
+                    stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
+                    
+                    # مربعات الاختيار لمواقع السقف (S1, S2, S3)
+                    st.markdown("حدد مواقع السقوف المطلوبة (يتم تفعيل علامة الصح لكل موقع مرغوب):")
+                    chk_c1, chk_c2, chk_c3 = st.columns(3)
+                    with chk_c1:
+                        is_corner = st.checkbox(f"زاوية / ركن [S3] ({s_idx+1})", value=False, key=f"chk_corner_{fl_idx}_{s_idx}")
+                    with chk_c2:
+                        is_edge = st.checkbox(f"خارجي / حافة [S2] ({s_idx+1})", value=(s_idx == 1), key=f"chk_edge_{fl_idx}_{s_idx}")
+                    with chk_c3:
+                        is_interior = st.checkbox(f"داخلي [S1] ({s_idx+1})", value=(s_idx == 0), key=f"chk_int_{fl_idx}_{s_idx}")
+
+                    # بناء قائمة التسميات والمواقع المفعلة بعلامات الصح
+                    active_tags = []
+                    active_positions_desc = []
+                    if is_interior:
+                        active_tags.append("S1")
+                        active_positions_desc.append("داخلي (Interior)")
+                    if is_edge:
+                        active_tags.append("S2")
+                        active_positions_desc.append("خارجي / حافة (Exterior/Edge)")
+                    if is_corner:
+                        active_tags.append("S3")
+                        active_positions_desc.append("زاوية / ركن (Corner)")
+
+                    if not active_tags:
+                        active_tags = ["S1"]
+                        active_positions_desc = ["داخلي (Interior) افتراضي"]
+
+                    tag_str = ", ".join(active_tags)
+                    pos_str = " + ".join(active_positions_desc)
+
+                    sc3, sc4 = st.columns(2)
+                    with sc3: sdia = st.selectbox(f"قطر حديد بلاطة {tag_str}:", ALL_BAR_DIAMETERS, index=1, format_func=lambda x: f"Ø{x} مم", key=f"sdia_{fl_idx}_{s_idx}")
                     with sc4: sspace = st.number_input(f"المسافة بين الأسياخ (مم):", min_value=100, max_value=300, value=150, step=25, key=f"ssp_{fl_idx}_{s_idx}")
 
-                    floor_slabs.append({"slab_num": s_idx + 1, "type": stype, "pos": spos, "dia": sdia, "spacing": sspace})
+                    floor_slabs.append({
+                        "slab_tag": tag_str,
+                        "type": stype,
+                        "pos": pos_str,
+                        "dia": sdia,
+                        "spacing": sspace
+                    })
 
                 st.markdown(f"##### ج) أعداد وتفاصيل الأعمدة والجسور لـ {fl_name}:")
                 col_d1, col_d2, col_d3 = st.columns(3)
@@ -410,13 +446,13 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                 })
 
     st.write("---")
-    btn_text = "⚡ توليد وعرض التقرير الإنشائي الشامل والمفصل لكل طابق" if auto_design else "🚀 إجراء التحليل الهندسي مفصلاً لكل طابق وبلاطة وجسر"
+    btn_text = "⚡ توليد وعرض التقرير الإنشائي الشامل والمفصل لكافة الطوابق" if auto_design else "🚀 إجراء التحليل الهندسي مع تسميات S1, S2, S3 ومواقع الأوفرلاب"
     
     if st.button(btn_text, use_container_width=True):
-        st.success("تم الحساب والتحليل الهندسي المفصل وفصل نتائج الطوابق عن بعضها بنجاح ✅")
+        st.success("تم الحساب والتحليل الهندسي وإدراج تسميات السقوف (S1, S2, S3) بنجاح ✅")
 
-        # 1. جداول تحليل السقوف والبلاطات مفصولة لكل طابق
-        st.subheader("📑 1. جدول تحليل السقوف، مواقع البلاطات، والأوفرلاب لكل طابق منفصل:")
+        # 1. جداول تحليل السقوف والبلاطات مفصولة لكل طابق مع التسميات
+        st.subheader("📑 1. جدول تحليل السقوف (تسميات S1, S2, S3)، المواقع والأوفرلاب لكل طابق:")
         
         export_csv_rows = []
         tot_overlap_wt_all_floors = 0.0
@@ -432,11 +468,11 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             slab_analysis_table = []
             for sl in f_item["slabs"]:
                 slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
-                if "زاوية" in sl["pos"]:
+                if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
                     mom_notes = "عزوم التواء (Torsion) وعزوم حافة قصوى. يُكثّف التسليح بالزوايا وفي الاتجاهين."
                     overlap_loc = f"عند 1/5 البحر (طول الأوفرلاب {slab_lap_cm} سم)"
                     rec_space = "100 - 125 مم"
-                elif "خارجي" in sl["pos"]:
+                elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
                     mom_notes = "عزم سالب مرتفع عند المرتكزات الخارجية. يُكثّف التسليح العلوي المقاوم للشقوق."
                     overlap_loc = f"عند مناطق الانقلاب L/4 (طول الأوفرلاب {slab_lap_cm} سم)"
                     rec_space = "125 - 150 مم"
@@ -446,9 +482,9 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                     rec_space = "150 - 200 مم"
 
                 slab_analysis_table.append({
-                    "البلاطة والسقف": f"بلاطة ({sl['slab_num']})",
+                    "التسمية والموقع": f"[{sl['slab_tag']}]",
                     "نوع السقف الهندسي": sl["type"],
-                    "الموقع": sl["pos"],
+                    "المواقع المفعلة": sl["pos"],
                     "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
                     "موقع وطول الأوفرلاب": overlap_loc,
                     "تحليل العزوم ومناطق التكثيف": mom_notes,
@@ -457,8 +493,9 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
                 export_csv_rows.append({
                     "الطابق": f_item['floor_title'],
-                    "العنصر": f"بلاطة ({sl['slab_num']}) - {sl['type']}",
-                    "الموقع": sl["pos"],
+                    "التسمية": sl['slab_tag'],
+                    "النوع": sl['type'],
+                    "المواقع": sl['pos'],
                     "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
                     "مكان الأوفرلاب": overlap_loc,
                     "تحليل العزوم": mom_notes
@@ -510,8 +547,8 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
         st.write("---")
         st.subheader("🪜 3. جدول تتبع وانتقال الأحمال الميتة والحية (Load Takedown) طابقاً بطابق:")
         
-        unit_dl = 3.2 # kN/m2 (حمل ميت مع وزن السقف والتشطيبات)
-        unit_ll = 2.0 if "سكني" in bldg_use else 4.0 # kN/m2 (حمل حي حسب الاستخدام)
+        unit_dl = 3.2 # kN/m2
+        unit_ll = 2.0 if "سكني" in bldg_use else 4.0 # kN/m2
         
         cum_load_kn = 0.0
         load_takedown_table = []
@@ -522,7 +559,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             f_tot_u = 1.2 * f_dl_total + 1.6 * f_ll_total
             cum_load_kn += f_tot_u
             
-            # نصيب العمود الواحد في هذا الطابق من الحمل المنتقل
             col_share_load = cum_load_kn / f_item["c_cnt"]
 
             load_takedown_table.append({
@@ -547,9 +583,9 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
         col_dl_x, col_dl_p = st.columns(2)
         
         # إنشاء ملف CSV
-        csv_str = "الطابق,العنصر,الموقع,التسليح,مكان الأوفرلاب,تحليل العزوم ومناطق التكثيف\n"
+        csv_str = "الطابق,التسمية,النوع,المواقع,التسليح,مكان الأوفرلاب,تحليل العزوم ومناطق التكثيف\n"
         for r in export_csv_rows:
-            csv_str += f"{r['الطابق']},{r['العنصر']},{r['الموقع']},{r['التسليح']},{r['مكان الأوفرلاب']},{r['تحليل العزوم']}\n"
+            csv_str += f"{r['الطابق']},{r['التسمية']},{r['النوع']},{r['المواقع']},{r['التسليح']},{r['مكان الأوفرلاب']},{r['تحليل العزوم']}\n"
         
         b64_csv = base64.b64encode(csv_str.encode('utf-8-sig')).decode()
         with col_dl_x:
@@ -579,10 +615,10 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             <hr>
             <h2>التقرير الإنشائي المفصل وتحليل الطوابق والسقوف والأحمال (ACI 318)</h2>
             <table>
-                <tr><th>الطابق</th><th>العنصر</th><th>الموقع</th><th>التسليح</th><th>مكان وطول الأوفرلاب</th><th>تحليل العزوم ومناطق التكثيف</th></tr>
+                <tr><th>الطابق</th><th>التسمية</th><th>النوع</th><th>المواقع المفعلة</th><th>التسليح</th><th>مكان وطول الأوفرلاب</th><th>تحليل العزوم</th></tr>
         """
         for r in export_csv_rows:
-            html_str += f"<tr><td>{r['الطابق']}</td><td>{r['العنصر']}</td><td>{r['الموقع']}</td><td>{r['التسليح']}</td><td>{r['مكان الأوفرلاب']}</td><td>{r['تحليل العزوم']}</td></tr>"
+            html_str += f"<tr><td>{r['الطابق']}</td><td>{r['التسمية']}</td><td>{r['النوع']}</td><td>{r['المواقع']}</td><td>{r['التسليح']}</td><td>{r['مكان الأوفرلاب']}</td><td>{r['تحليل العزوم']}</td></tr>"
         html_str += f"""
             </table>
             <p><b>إجمالي كلفة حديد الأوفرلاب للأعمدة:</b> {tot_lap_cost_iqd:,.0f} دينار عراقي</p>
