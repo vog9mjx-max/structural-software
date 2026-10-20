@@ -253,7 +253,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 التدقيق والتحليل الإنشائي والتوليد الذكي التلقائي (ACI 318)")
-    st.markdown("اختر نمط العمل (التصميم والتوليد التلقائي الشامل، أو التدقيق اليدوي المتقدم مع خانات الفحص المتعددة S1, S2, S3):")
+    st.markdown("اختر نمط العمل (التصميم والتوليد التلقائي الشامل مع اختيار تسميات S1, S2, S3، أو التدقيق اليدوي):")
     st.write("---")
 
     auto_design = st.toggle("⚡ تفعيل نظام التوليد والتصميم الإنشائي الذكي التلقائي (Auto-Design Wizard)", value=True)
@@ -279,10 +279,10 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
     floors_data = []
 
     # ==========================================
-    # المسار الأول: التوليد التلقائي الشامل
+    # المسار الأول: التوليد التلقائي مع تفعيل التسميات S1, S2, S3 لكل طابق
     # ==========================================
     if auto_design:
-        st.success("🤖 نظام التوليد التلقائي الشامل مفعل! حدد مواصفات السقوف وأعداد الجسور والأعمدة لكل طابق أدناه:")
+        st.success("🤖 نظام التوليد التلقائي الشامل مفعل! حدد مواصفات السقوف ومواقعها (S1, S2, S3) وأعداد الجسور والأعمدة لكل طابق أدناه:")
 
         st.subheader("📏 أبعاد مساحة الطابق الأساسية (محاور X & Y)")
         auto_col_x, auto_col_y = st.columns(2)
@@ -301,29 +301,32 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                 st.markdown(f"**أ) نوع سقف البلاطة لـ {fl_name}:**")
                 auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
-                st.markdown(f"**ب) عدد الجسور والأعمدة لـ {fl_name}:**")
+                st.markdown(f"**ب) حدد مواقع السقوف (S1, S2, S3) المراد توليدها لـ {fl_name}:**")
+                ac_chk1, ac_chk2, ac_chk3 = st.columns(3)
+                with ac_chk1:
+                    auto_c_s3 = st.checkbox(f"زاوية / ركن [S3] لـ {fl_name}", value=True, key=f"auto_s3_{fl_idx}")
+                with ac_chk2:
+                    auto_c_s2 = st.checkbox(f"خارجي / حافة [S2] لـ {fl_name}", value=True, key=f"auto_s2_{fl_idx}")
+                with ac_chk3:
+                    auto_c_s1 = st.checkbox(f"داخلي [S1] لـ {fl_name}", value=True, key=f"auto_s1_{fl_idx}")
+
+                st.markdown(f"**ج) عدد الجسور والأعمدة لـ {fl_name}:**")
                 ac1, ac2 = st.columns(2)
                 with ac1:
                     auto_beams_cnt = st.number_input(f"عدد الجسور (Beams) في {fl_name}:", min_value=2, max_value=30, value=8, step=1, key=f"auto_b_{fl_idx}")
                 with ac2:
                     auto_cols_cnt = st.number_input(f"عدد الأعمدة (Columns) في {fl_name}:", min_value=4, max_value=40, value=12, step=1, key=f"auto_c_{fl_idx}")
 
-            auto_slabs = [
-                {
-                    "slab_tag": "S1 (Interior)",
-                    "type": auto_stype,
-                    "pos": "داخلي (Interior)",
-                    "dia": 12 if fl_idx == 1 else 10,
-                    "spacing": 150
-                },
-                {
-                    "slab_tag": "S2 (Exterior / Edge)",
-                    "type": auto_stype,
-                    "pos": "خارجي / حافة (Exterior / Edge)",
-                    "dia": 12,
-                    "spacing": 125
-                }
-            ]
+            auto_slabs = []
+            if auto_c_s1:
+                auto_slabs.append({"slab_tag": "S1", "type": auto_stype, "pos": "داخلي (Interior)", "dia": 10 if fl_idx > 1 else 12, "spacing": 150})
+            if auto_c_s2:
+                auto_slabs.append({"slab_tag": "S2", "type": auto_stype, "pos": "خارجي / حافة (Exterior/Edge)", "dia": 12, "spacing": 125})
+            if auto_c_s3:
+                auto_slabs.append({"slab_tag": "S3", "type": auto_stype, "pos": "زاوية / ركن (Corner)", "dia": 12, "spacing": 100})
+
+            if not auto_slabs:
+                auto_slabs.append({"slab_tag": "S1", "type": auto_stype, "pos": "داخلي (Interior)", "dia": 12, "spacing": 150})
 
             col_d_auto = 25 if fl_idx == 1 and total_floors_cnt > 3 else (20 if fl_idx <= 2 else 16)
             col_n_auto = 8 if total_floors_cnt <= 3 else 10
@@ -376,7 +379,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                     st.markdown(f"**🔹 بلاطة ({s_idx + 1}):**")
                     stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
                     
-                    # مربعات الاختيار لمواقع السقف (S1, S2, S3)
                     st.markdown("حدد مواقع السقوف المطلوبة (يتم تفعيل علامة الصح لكل موقع مرغوب):")
                     chk_c1, chk_c2, chk_c3 = st.columns(3)
                     with chk_c1:
@@ -386,7 +388,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                     with chk_c3:
                         is_interior = st.checkbox(f"داخلي [S1] ({s_idx+1})", value=(s_idx == 0), key=f"chk_int_{fl_idx}_{s_idx}")
 
-                    # بناء قائمة التسميات والمواقع المفعلة بعلامات الصح
                     active_tags = []
                     active_positions_desc = []
                     if is_interior:
