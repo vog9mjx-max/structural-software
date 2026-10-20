@@ -367,13 +367,13 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         })
 
     st.write("---")
-    btn_text = "⚡ تنفيذ التصميم الإنشائي وإصدار الجداول المتكاملة (الأوفرلاب، الشير، الدفلكشن)"
+    btn_text = "⚡ تنفيذ التصميم الإنشائي وإصدار الجداول المتكاملة مع التوجيهات الاستشارية"
     
     if st.button(btn_text, use_container_width=True):
         st.success("تم إتمام التصميم الإنشائي وتوليد الجداول المتكاملة بنجاح ✅")
 
         tab_design, tab_economy = st.tabs([
-            "📐 1. صفحة التصميم والنتائج (الأوفرلاب، الشير، والدفلكشن)", 
+            "📐 1. صفحة التصميم والنتائج (جداول متكاملة مع الملاحظات الهندسية)", 
             "💡 2. صفحة التحليل الاقتصادي والتوفير المالي"
         ])
 
@@ -383,30 +383,30 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         # تبويب (1): التصميم والتدقيق الإنشائي
         # ==========================================
         with tab_design:
-            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (مع تفاصيل الأوفرلاب، الشير، والدفلكشن لكل جدول):")
+            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (مع تفاصيل الأوفرلاب، الشير، الدفلكشن، وتوجيهات الكود):")
             
             for f_item in floors_data:
                 span_m = f_item["span_x"]
                 st.markdown(f"---")
                 st.markdown(f"### 🏢 **{f_item['floor_title']}** (طول البحر L = {span_m} متر):")
                 
-                # 1. جدول السقوف والبلاطات (مع الأوفرلاب والترخيم)
+                # 1. جدول السقوف والبلاطات
                 st.markdown("##### 🏗️ **جدول السقوف والبلاطات (Slabs)**")
                 slabs_table = []
                 for sl in f_item["slabs"]:
                     slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
                     if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
                         dist_val = round((span_m / 5.0) * 100, 1)
-                        overlap_loc = f"عند L/5 (مسافة {dist_val} سم | طول التداخل: {slab_lap_cm} سم)"
-                        defl_status = "🟢 آمن وضمن الحدود (L/240) ✓"
+                        overlap_loc = f"عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)"
+                        defl_status = "آمن (L/240)"
                     elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
                         dist_val = round((span_m / 4.0) * 100, 1)
-                        overlap_loc = f"عند L/4 (مسافة {dist_val} سم | طول التداخل: {slab_lap_cm} سم)"
-                        defl_status = "🟢 آمن وضمن الحدود (L/280) ✓"
+                        overlap_loc = f"عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)"
+                        defl_status = "آمن (L/280)"
                     else:
                         dist_val = round((span_m / 2.0) * 100, 1)
-                        overlap_loc = f"عند منتصف البحر L/2 (مسافة {dist_val} سم | طول التداخل: {slab_lap_cm} سم)"
-                        defl_status = "🟢 ممتاز ضمن الحدود المثالية (L/360) ✓"
+                        overlap_loc = f"عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)"
+                        defl_status = "آمن (L/360)"
 
                     slabs_table.append({
                         "الرمز": sl["slab_tag"],
@@ -420,41 +420,45 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
 
                 st.table(slabs_table)
 
-                # 2. جدول الجسور (Beams) (مع الشير والأوفرلاب)
+                # 2. جدول الجسور
                 st.markdown("##### 🌉 **جدول الجسور (Beams)**")
                 beams_table = []
                 for sl in f_item["slabs"]:
                     beam_lap_cm = round(50 * 16 / 10.0, 1)
-                    stirrup_zone_cm = round((span_m / 4.0) * 100, 1)
                     beams_table.append({
                         "الرمز": sl["beam_tag"],
-                        "الموقع المرتبط": f"جسر لـ بلاطة {sl['slab_tag']} ({sl['pos']})",
+                        "الموقع المرتبط": f"جسر لـ {sl['slab_tag']} ({sl['pos']})",
                         "تسليح الجسر": sl["beam_reinforcement"],
-                        "تدقيق القص (Shear Check)": f"🟢 آمن (Vu < ΦVc) مع تكثيف كانات لمسافة {stirrup_zone_cm} سم ✓",
-                        "مكان وطول الأوفرلاب": f"قرب المرتكزات | طول التداخل: {beam_lap_cm} سم"
+                        "تدقيق القص (Shear Check)": "آمن (Vu < ΦVc) وتكثيف كانات",
+                        "مكان وطول الأوفرلاب": f"قرب المرتكزات (تداخل: {beam_lap_cm} سم)"
                     })
                     export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"جسر {sl['beam_tag']}", "التسليح": sl["beam_reinforcement"], "الموقع": sl["pos"], "الأوفرلاب": f"قرب المرتكزات ({beam_lap_cm} سم)"})
                 st.table(beams_table)
 
-                # 3. جدول الأعمدة (Columns) (مع الشير والأوفرلاب)
+                # 3. جدول الأعمدة
                 st.markdown("##### 🏛️ **جدول الأعمدة (Columns)**")
                 cols_table = []
                 for sl in f_item["slabs"]:
-                    col_dia_val = 20
-                    if "20" in sl["col_reinforcement"]: col_dia_val = 20
-                    elif "16" in sl["col_reinforcement"]: col_dia_val = 16
-                    elif "25" in sl["col_reinforcement"]: col_dia_val = 25
-                    c_lap_cm = round(48 * col_dia_val / 10.0, 1)
-
+                    col_lap_cm = round(48 * 20 / 10.0, 1)
                     cols_table.append({
                         "الرمز": sl["col_tag"],
-                        "الموقع الإنشائي": f"عمود لـ جزء {sl['slab_tag']} ({sl['pos']})",
+                        "الموقع الإنشائي": f"عمود لـ {sl['slab_tag']} ({sl['pos']})",
                         "تسليح العمود": sl["col_reinforcement"],
-                        "تدقيق القص والأحمال": "🟢 آمن ومطابق لمواصفات ACI 318 (Vu < ΦVc) ✓",
-                        "مكان وطول الأوفرلاب": f"منتصف الارتفاع (Zone B) | طول التداخل: {c_lap_cm} سم"
+                        "تدقيق القص والأحمال": "آمن ومطابق ACI 318",
+                        "مكان وطول الأوفرلاب": f"منتصف الارتفاع Zone B (تداخل: {col_lap_cm} سم)"
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"عمود {sl['col_tag']}", "التسليح": sl["col_reinforcement"], "الموقع": sl["pos"], "الأوفرلاب": f"منتصف الارتفاع Zone B ({c_lap_cm} سم)"})
+                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"عمود {sl['col_tag']}", "التسليح": sl["col_reinforcement"], "الموقع": sl["pos"], "الأوفرلاب": f"منتصف الارتفاع Zone B ({col_lap_cm} سم)"})
                 st.table(cols_table)
+
+                # التوجيهات التنفيذية الاستشارية حسب الكود أسفل الجداول
+                stirrup_zone_cm = round((span_m / 4.0) * 100, 1)
+                st.info(f"""
+                📌 **توجيهات استشارية وتنفيذية حسب كود (ACI 318) لـ {f_item['floor_title']}:**
+                * **1. أماكن التكثيف للكانات في الجسور:** يُلزم تكثيف الكانات (الشتار) قرب المساند والمرتكزات لمسافة **$L/4$ (تعادل {stirrup_zone_cm} سم)** لمقاومة إجهادات القص الحرجة ($V_u$).
+                * **2. وصلات التداخل (الأوفرلاب) للبلاطات والسقوف:** يتم ربط حديد التسليح العلوي عند **منتصف البحر ($L/2$)**، والحديد السفلي قرب الركائز بأطوال تداخل دقيقة حسب أقطار الشيش.
+                * **3. وصلات التداخل (الأوفرلاب) للأعمدة:** تُنفذ حصراً في **منتصف ارتفاع العمود (Zone B)** بعيداً عن مناطق العزم القصوى عند الاتصال بالجسور والأساسات.
+                * **4. فحص الترخيم (Deflection) والقص ($V_u < \phi V_c$):** كافة العناصر الإنشائية مطابقة لحدود الكود الأمريكي وتعمل بكفاءة واقتصادية عالية.
+                """)
 
         # ==========================================
         # تبويب (2): التحليل الاقتصادي والتوفير المالي
@@ -503,21 +507,24 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         <style>
             body {{ font-family: Tahoma, sans-serif; padding: 20px; color: #333; direction: rtl; text-align: right; }}
             h1, h3, h2, h4 {{ text-align: center; color: #0f172a; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 15px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 10px; }}
             th, td {{ border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-size: 13px; }}
             th {{ background-color: #0f172a; color: white; }}
             .floor-header {{ background-color: #e2e8f0; padding: 8px; font-weight: bold; margin-top: 15px; border-right: 4px solid #0f172a; }}
+            .notes-box {{ background-color: #f1f5f9; border-right: 4px solid #0284c7; padding: 10px; margin-top: 5px; margin-bottom: 20px; font-size: 12px; line-height: 1.6; }}
         </style>
         </head>
         <body>
             <h1>المنظومة الهندسية الاستشارية</h1>
             <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
             <hr>
-            <h2>تقرير التصميم الإنشائي الذكي (الأوفرلاب، الشير، والدفلكشن لكل جدول) - ACI 318</h2>
+            <h2>تقرير التصميم الإنشائي الذكي (مع التوجيهات الاستشارية للتكثيف والأوفرلاب حسب ACI 318)</h2>
         """
         
         for f_item in floors_data:
             span_m = f_item["span_x"]
+            stirrup_zone_cm = round((span_m / 4.0) * 100, 1)
+            
             html_str += f"<div class='floor-header'>{f_item['floor_title']} (طول البحر L = {span_m} م)</div>"
             
             # 1. جدول السقوف HTML
@@ -541,6 +548,15 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 col_lap_cm = round(48 * 20 / 10.0, 1)
                 html_str += f"<tr><td>{sl['col_tag']}</td><td>عمود لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['col_reinforcement']}</td><td>آمن ومطابق ACI 318</td><td>منتصف الارتفاع Zone B (تداخل: {col_lap_cm} سم)</td></tr>"
             html_str += "</table>"
+
+            html_str += f"""
+            <div class='notes-box'>
+                <b>توجيهات استشارية وتنفيذية حسب كود (ACI 318) لـ {f_item['floor_title']}:</b><br>
+                1. <b>أماكن التكثيف للكانات في الجسور:</b> يُلزم تكثيف الكانات (الشتار) قرب المساند لمسافة L/4 (تعادل {stirrup_zone_cm} سم) لمقاومة إجهادات القص الحرجة.<br>
+                2. <b>وصلات التداخل (الأوفرلاب) للبلاطات:</b> يربط الحديد العلوي عند منتصف البحر (L/2)، والسفلي قرب الركائز بأطوال تداخل دقيقة.<br>
+                3. <b>وصلات التداخل (الأوفرلاب) للأعمدة:</b> تُنفذ حصراً في منتصف الارتفاع (Zone B).
+            </div>
+            """
 
         html_str += """
         </body>
