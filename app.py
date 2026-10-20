@@ -244,7 +244,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
-    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج وانتقال الأحمال (Load Path)، ومسافات تكسيح الشبون الدقيقة لكل بلاطة:")
+    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج وانتقال الأحمال (Load Path)، ونظام التسليح المتكامل للبلاطات:")
     st.write("---")
 
     ALL_BAR_DIAMETERS = [8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32]
@@ -421,11 +421,11 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             
             for f_item in floors_data:
                 span_m = f_item["span_x"]
-                crank_dist_cm = round((span_m / 7.0) * 100, 1) # مسافة تكسيح الشبون الدقيقة L/7 بالسم
+                crank_dist_cm = round((span_m / 7.0) * 100, 1)
                 st.markdown(f"---")
                 st.markdown(f"### 🏢 **{f_item['floor_title']}** (البحر L = {span_m} م | عدد أعمدة الطابق: {f_item['total_cols']} عمود | معامل تدرج الأحمال: Tier {f_item['load_tier']}):")
                 
-                # 1. جدول السقوف والبلاطات (مع عرض مسافة تكسيح الشبون بالسم بوضوح تام لكل بلاطة)
+                # 1. جدول السقوف والبلاطات (مصطلح هندسي سليم وموثوق تماماً)
                 st.markdown("##### 🏗️ **جدول السقوف والبلاطات (Slabs)**")
                 slabs_table = []
                 for sl in f_item["slabs"]:
@@ -433,9 +433,9 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     dist_val = round((span_m / 2.0) * 100, 1)
                     
                     if "تكسيح" in rebar_method_choice or "Bent-up" in rebar_method_choice:
-                        crank_info = f"تكسيح شبون (مسافة {crank_dist_cm} سم = L/7 من المسند) | أوفـرلاب {dist_val}.0 سم ({slab_lap_cm} سم)"
+                        crank_info = f"تكسيح شبون (مسافة {crank_dist_cm} سم = L/7 عزم سالب وموجب) | أوفـرلاب {dist_val}.0 سم ({slab_lap_cm} سم)"
                     else:
-                        crank_info = f"شبكتين مستقيمتين | أوفـرلاب {dist_val}.0 سم ({slab_lap_cm} سم)"
+                        crank_info = f"شبكتين مستقيمتين (سفلي وعُلوي متكامل) | أوفـرلاب {dist_val}.0 سم ({slab_lap_cm} سم)"
                     
                     if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
                         defl_status = "🟢 آمن (L/240) ✓"
@@ -471,7 +471,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"جسر {sl['beam_tag']}", "التسليح": sl['beam_reinforcement'], "الموقع": sl["pos"], "الأوفرلاب": f"قرب المساند ومنتصف البحر ({beam_lap_cm} سم)"})
                 st.table(beams_table)
 
-                # 3. جدول الأعمدة (المتأثر بتدرج الأحمال)
+                # 3. جدول الأعمدة
                 st.markdown("##### 🏛️ **جدول الأعمدة (Columns - مسار الأحمال المتراكم)**")
                 cols_table = []
                 for sl in f_item["slabs"]:
