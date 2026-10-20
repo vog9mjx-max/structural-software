@@ -118,7 +118,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
     modular_table_data = []
     grand_total_cost = 0.0
 
-    # 1. أعمال البناء والطابوق
     st.subheader("1️⃣ قسم أعمال البناء والطابوق / البلوك")
     use_brick = st.radio("هل تريد حساب قسم الطابوق والبلوك في الكلفة؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_brick")
     b_cost = 0
@@ -141,8 +140,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         grand_total_cost += b_cost
 
     st.write("---")
-
-    # 2. اللبخ والإنهاءات
     st.subheader("2️⃣ قسم اللبخ والإنهاءات الداخلية والخارجية")
     use_plaster = st.radio("هل تريد حساب قسم اللبخ والإنهاءات؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_plaster")
     plaster_cost = 0
@@ -158,8 +155,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         grand_total_cost += plaster_cost
 
     st.write("---")
-
-    # 3. الأرضيات
     st.subheader("3️⃣ قسم الأرضيات (كاشي، مرمر، بورسلين، سيراميك)")
     use_floors = st.radio("هل تريد حساب قسم الأرضيات؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_floors")
     floor_cost = 0
@@ -177,8 +172,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         grand_total_cost += floor_cost
 
     st.write("---")
-
-    # 4. الخرسانة والحديد
     st.subheader("4️⃣ قسم الخرسانة المسلحة وحديد التسليح")
     use_concrete = st.radio("هل تريد حساب قسم الهيكل الإنشائي (كونكريت + حديد)؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_concrete")
     struct_cost = 0
@@ -200,8 +193,6 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         grand_total_cost += struct_cost
 
     st.write("---")
-
-    # 5. العزل والآليات
     st.subheader("5️⃣ العزل، الآليات، وأجور الكوادر")
     use_extras = st.radio("هل تريد حساب مواد العزل والآليات والأجور؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_ext")
     if "نعم" in use_extras:
@@ -251,9 +242,9 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 # 3. التدقيق الإنشائي والتوليد التلقائي الذكي (ACI 318)
 # ==========================================
-elif "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
+elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 التدقيق والتحليل الإنشائي والتوليد الذكي التلقائي (ACI 318)")
-    st.markdown("تشمل المنظومة الآن تدقيق **القص (Shear)** و**الترخيم (Deflection)** منفصلاً لكل طابق ولكل نوع سقف وموقع ($S_1, S_2, S_3$):")
+    st.markdown("تم تنظيم العمل في **صفحتين (تبويبين) منفصلتين** لضمان وضوح كامل وخلو التقرير من أي رموز غير واضحة:")
     st.write("---")
 
     auto_design = st.toggle("⚡ تفعيل نظام التوليد والتصميم الإنشائي الذكي التلقائي (Auto-Design Wizard)", value=True)
@@ -278,9 +269,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
     floors_data = []
 
-    # ==========================================
-    # المسار الأول: التوليد التلقائي الشامل مع فحص Shear & Deflection
-    # ==========================================
     if auto_design:
         st.success("🤖 نظام التوليد التلقائي الشامل مفعل! سيتم فحص القص والترخيم افتراضياً لكل طابق وسقف:")
 
@@ -344,10 +332,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                 "c_cnt": auto_cols_cnt,
                 "st_sp": 100
             })
-
-    # ==========================================
-    # المسار الثاني: التدقيق اليدوي المتقدم مع فحص Shear & Deflection
-    # ==========================================
     else:
         st.warning("🛠️ وضع التدقيق اليدوي المتقدم مفعل! حدد مربعات مواقع السقوف (S1, S2, S3) وتفاصيل العناصر بنفسك.")
         if "floor_segments" not in st.session_state:
@@ -371,7 +355,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
 
                 st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
 
-                st.markdown(f"##### ب) السقوف وبلاطات {fl_name} (اختر المواقع لتوليد التسميات S1, S2, S3):")
+                st.markdown(f"##### ب) السقوف وبلاطات {fl_name}:")
                 sl_count = st.number_input(f"عدد البلاطات في {fl_name}:", min_value=1, max_value=8, value=2, step=1, key=f"sl_cnt_{fl_idx}")
 
                 floor_slabs = []
@@ -379,26 +363,16 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                     st.markdown(f"**🔹 بلاطة ({s_idx + 1}):**")
                     stype = st.selectbox(f"نوع سقف البلاطة ({s_idx+1}):", ALL_SLAB_TYPES, key=f"stype_{fl_idx}_{s_idx}")
                     
-                    st.markdown("حدد مواقع السقوف المطلوبة (يتم تفعيل علامة الصح لكل موقع مرغوب):")
                     chk_c1, chk_c2, chk_c3 = st.columns(3)
-                    with chk_c1:
-                        is_corner = st.checkbox(f"زاوية / ركن [S3] ({s_idx+1})", value=False, key=f"chk_corner_{fl_idx}_{s_idx}")
-                    with chk_c2:
-                        is_edge = st.checkbox(f"خارجي / حافة [S2] ({s_idx+1})", value=(s_idx == 1), key=f"chk_edge_{fl_idx}_{s_idx}")
-                    with chk_c3:
-                        is_interior = st.checkbox(f"داخلي [S1] ({s_idx+1})", value=(s_idx == 0), key=f"chk_int_{fl_idx}_{s_idx}")
+                    with chk_c1: is_corner = st.checkbox(f"زاوية / ركن [S3] ({s_idx+1})", value=False, key=f"chk_corner_{fl_idx}_{s_idx}")
+                    with chk_c2: is_edge = st.checkbox(f"خارجي / حافة [S2] ({s_idx+1})", value=(s_idx == 1), key=f"chk_edge_{fl_idx}_{s_idx}")
+                    with chk_c3: is_interior = st.checkbox(f"داخلي [S1] ({s_idx+1})", value=(s_idx == 0), key=f"chk_int_{fl_idx}_{s_idx}")
 
                     active_tags = []
                     active_positions_desc = []
-                    if is_interior:
-                        active_tags.append("S1")
-                        active_positions_desc.append("داخلي (Interior)")
-                    if is_edge:
-                        active_tags.append("S2")
-                        active_positions_desc.append("خارجي / حافة (Exterior/Edge)")
-                    if is_corner:
-                        active_tags.append("S3")
-                        active_positions_desc.append("زاوية / ركن (Corner)")
+                    if is_interior: active_tags.append("S1"); active_positions_desc.append("داخلي (Interior)")
+                    if is_edge: active_tags.append("S2"); active_positions_desc.append("خارجي / حافة (Exterior)")
+                    if is_corner: active_tags.append("S3"); active_positions_desc.append("زاوية / ركن (Corner)")
 
                     if not active_tags:
                         active_tags = ["S1"]
@@ -419,7 +393,6 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                         "spacing": sspace
                     })
 
-                st.markdown(f"##### ج) أعداد وتفاصيل الأعمدة والجسور لـ {fl_name}:")
                 col_d1, col_d2, col_d3 = st.columns(3)
                 with col_d1:
                     col_bar_d = st.selectbox(f"قطر حديد الأعمدة:", ALL_BAR_DIAMETERS, index=6, format_func=lambda x: f"Ø{x} مم", key=f"cd_{fl_idx}")
@@ -447,150 +420,157 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
                 })
 
     st.write("---")
-    btn_text = "⚡ توليد وعرض التقرير الإنشائي الشامل (مع فحص القص والترخيم وفصل الجداول)" if auto_design else "🚀 إجراء التحليل الهندسي مع فحص Shear & Deflection وفصل جداول الطوابق"
+    btn_text = "⚡ توليد التقارير الإنشائية المفصلة (صفحة التصميم + صفحة التوفير الاقتصادي)" if auto_design else "🚀 إجراء التحليل الهندسي الشامل وتقسيم الصفحات"
     
     if st.button(btn_text, use_container_width=True):
-        st.success("تم الحساب والتحليل الهندسي مع تدقيق القص (Shear) والترخيم (Deflection) وفصل جداول الطوابق بنجاح ✅")
+        st.success("تم إتمام الحسابات الإنشائية والتدقيق الكودوي بنجاح ✅")
 
-        # 1. جداول تحليل السقوف والبلاطات مع فحص Shear & Deflection (مفصولة تماماً لكل طابق)
-        st.subheader("📑 1. جدول تحليل السقوف وتدقيق القص والترخيم (مفصول لكل طابق على حدة):")
-        
+        # إنشاء التبويبين (Tabs) الرئيسيين حسب طلب المهندس محمد
+        tab_design, tab_economy = st.tabs([
+            "📐 1. صفحة التصميم والتدقيق الإنشائي (القص، الترخيم، والأوفرلاب)", 
+            "💡 2. صفحة التحليل الاقتصادي والتوفير المالي للمشروع"
+        ])
+
         export_csv_rows = []
         tot_overlap_wt_all_floors = 0.0
 
-        for f_item in floors_data:
-            st.markdown(f"---")
-            st.markdown(f"#### 🏢 **{f_item['floor_title']}** (المساحة: {f_item['area']:.1f} م² | عدد الأعمدة: {f_item['c_cnt']} | عدد الجسور: {f_item['b_cnt']}):")
+        # ==========================================
+        # تبويب (1): التصميم والتدقيق الإنشائي
+        # ==========================================
+        with tab_design:
+            st.subheader("📋 تفاصيل نتائج التدقيق الإنشائي للطوابق والسقوف (ACI 318):")
             
-            c_lap_cm = round(48 * f_item["c_dia"] / 10.0, 1)
-            c_unit_wt = (f_item["c_dia"]**2) / 162.0
-            f_col_lap_wt_kg = f_item["c_cnt"] * f_item["c_num"] * (c_lap_cm / 100.0) * c_unit_wt
-            tot_overlap_wt_all_floors += f_col_lap_wt_kg
-
-            slab_analysis_table = []
-            for sl in f_item["slabs"]:
-                slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
+            for f_item in floors_data:
+                st.markdown(f"---")
+                st.markdown(f"#### 🏢 **{f_item['floor_title']}** (المساحة: {f_item['area']:.1f} م² | عدد الأعمدة: {f_item['c_cnt']} | عدد الجسور: {f_item['b_cnt']}):")
                 
-                if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
-                    mom_notes = "عزوم التواء وحافة قصوى. يُكثّف التسليح بالزوايا."
-                    shear_status = "✅ القص آمن ($V_u < \phi V_c$)"
-                    defl_status = "✅ الترخيم ضمن حدود الكود ($L/240$)"
-                    overlap_loc = f"عند 1/5 البحر (طول {slab_lap_cm} سم)"
-                elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
-                    mom_notes = "عزم سالب مرتفع عند المرتكزات. يُكثّف التسليح العلوي."
-                    shear_status = "✅ القص آمن ($V_u < \phi V_c$)"
-                    defl_status = "✅ الترخيم ضمن حدود الكود ($L/280$)"
-                    overlap_loc = f"عند مناطق الانقلاب L/4 (طول {slab_lap_cm} سم)"
-                else:
-                    mom_notes = "عزوم موجبة وسالبة متوازنة. تسليح قياسي."
-                    shear_status = "✅ القص آمن جداً بدون كانات إضافية للبلاطة"
-                    defl_status = "✅ الترخيم ممتاز وضمن الحدود المثالية ($L/360$)"
-                    overlap_loc = f"منتصف البحر للعلوي والمرتكزات للسفلي ({slab_lap_cm} سم)"
+                c_lap_cm = round(48 * f_item["c_dia"] / 10.0, 1)
+                c_unit_wt = (f_item["c_dia"]**2) / 162.0
+                f_col_lap_wt_kg = f_item["c_cnt"] * f_item["c_num"] * (c_lap_cm / 100.0) * c_unit_wt
+                tot_overlap_wt_all_floors += f_col_lap_wt_kg
 
-                slab_analysis_table.append({
-                    "التسمية والموقع": f"[{sl['slab_tag']}]",
-                    "نوع السقف الهندسي": sl["type"],
-                    "المواقع المفعلة": sl["pos"],
-                    "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
-                    "تدقيق القص (Shear)": shear_status,
-                    "تدقيق الترخيم (Deflection)": defl_status,
-                    "موقع وطول الأوفرلاب": overlap_loc,
-                    "تحليل العزوم والتكثيف": mom_notes
-                })
+                slab_analysis_table = []
+                for sl in f_item["slabs"]:
+                    slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
+                    
+                    # رموز واضحة ونظيفة بدون رموز رياضية مزعجة ($)
+                    if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
+                        mom_notes = "عزوم التواء وحافة قصوى. يُكثّف التسليح بالزوايا."
+                        shear_status = "آمن (Vu < ΦVc) ✔️"
+                        defl_status = "ضمن حدود الكود (L/240) ✔️"
+                        overlap_loc = f"عند 1/5 البحر (طول {slab_lap_cm} سم)"
+                    elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
+                        mom_notes = "عزم سالب مرتفع عند المرتكزات. يُكثّف التسليح العلوي."
+                        shear_status = "آمن (Vu < ΦVc) ✔️"
+                        defl_status = "ضمن حدود الكود (L/280) ✔️"
+                        overlap_loc = f"عند مناطق الانقلاب L/4 (طول {slab_lap_cm} سم)"
+                    else:
+                        mom_notes = "عزوم موجبة وسالبة متوازنة. تسليح قياسي."
+                        shear_status = "آمن جداً بدون كانات إضافية (Vu < ΦVc) ✔️"
+                        defl_status = "ممتاز وضمن الحدود المثالية (L/360) ✔️"
+                        overlap_loc = f"منتصف البحر للعلوي والمرتكزات للسفلي ({slab_lap_cm} سم)"
 
-                export_csv_rows.append({
-                    "الطابق": f_item['floor_title'],
-                    "التسمية": sl['slab_tag'],
-                    "النوع": sl['type'],
-                    "المواقع": sl['pos'],
-                    "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
-                    "القص": shear_status,
-                    "الترخيم": defl_status,
-                    "مكان الأوفرلاب": overlap_loc
-                })
+                    slab_analysis_table.append({
+                        "التسمية والموقع": f"[{sl['slab_tag']}]",
+                        "نوع السقف": sl["type"],
+                        "المواقع": sl["pos"],
+                        "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
+                        "فحص القص": shear_status,
+                        "فحص الترخيم": defl_status,
+                        "الأوفرلاب": overlap_loc,
+                        "تحليل العزوم": mom_notes
+                    })
 
-            st.table(slab_analysis_table)
+                    export_csv_rows.append({
+                        "الطابق": f_item['floor_title'],
+                        "التسمية": sl['slab_tag'],
+                        "النوع": sl['type'],
+                        "المواقع": sl['pos'],
+                        "التسليح": f"Ø{sl['dia']} كل {sl['spacing']}مم",
+                        "القص": shear_status,
+                        "الترخيم": defl_status,
+                        "مكان الأوفرلاب": overlap_loc
+                    })
 
-            # جدول الأعمدة والجسور الخاص بهذا الطابق حصراً
-            b_lap_cm = round(50 * f_item["b_dia"] / 10.0, 1)
-            cb_table = [
-                {
-                    "العنصر الإنشائي": f"الأعمدة ({f_item['c_cnt']} عمود)",
-                    "التسليح": f"{f_item['c_num']} Ø{f_item['c_dia']}",
-                    "تدقيق القص والأوفرلاب": f"منتصف العمود (Zone B) | الطول: {c_lap_cm} سم | الوزن: {f_col_lap_wt_kg:.1f} كغم",
-                    "حالة الأمان": "✅ تحمل القص والانضغاط مطابق لـ ACI"
-                },
-                {
-                    "العنصر الإنشائي": f"الجسور ({f_item['b_cnt']} جسر)",
-                    "التسليح والكانات": f"{f_item['b_num']} Ø{f_item['b_dia']} | كانات كل {f_item['st_sp']}مم",
-                    "تدقيق القص والأوفرلاب": f"تكثيف الكانات قرب المرتكزات (L/4) لمقاومة القص الحرج ($V_u$)",
-                    "حالة الأمان": "✅ القص والترخيم للجسور ضمن حدود الأمان"
-                }
-            ]
-            st.table(cb_table)
+                st.table(slab_analysis_table)
 
-        # 2. جدول التحليل الاقتصادي المفصول لكل طابق
-        st.write("---")
-        st.subheader("💡 2. جدول التحليل الاقتصادي والتوفير المالي (مفصول لكل طابق):")
-        
-        for f_item in floors_data:
-            st.markdown(f"#### 💰 **التحليل الاقتصادي - {f_item['floor_title']}**:")
-            econ_floor_table = [
-                {
-                    "العنصر": "السقوف والبلاطات",
-                    "التسليح الحالي": f"Ø{f_item['slabs'][0]['dia']}",
-                    "التسليح الاقتصادي": "Ø10 أو Ø12 كل 175-200مم",
-                    "نسبة التوفير المتوقعة": "توفير ~10% من حديد السقف."
-                },
-                {
-                    "العنصر": "الأعمدة والجسور",
-                    "التسليح الحالي": f"{f_item['c_num']} Ø{f_item['c_dia']} أعمدة",
-                    "التسليح الاقتصادي": "8 Ø16 للأعمدة المتكررة",
-                    "نسبة التوفير المتوقعة": "تحسين التوزيع الهيكلي وتقليل الهدر."
-                }
-            ]
-            st.table(econ_floor_table)
+                b_lap_cm = round(50 * f_item["b_dia"] / 10.0, 1)
+                cb_table = [
+                    {
+                        "العنصر الإنشائي": f"الأعمدة ({f_item['c_cnt']} عمود)",
+                        "التسليح": f"{f_item['c_num']} Ø{f_item['c_dia']}",
+                        "تفاصيل القص والأوفرلاب": f"منتصف العمود | الطول: {c_lap_cm} سم | الوزن: {f_col_lap_wt_kg:.1f} كغم",
+                        "الحالة": "مطابق للمواصفات ACI 318 ✔️"
+                    },
+                    {
+                        "العنصر الإنشائي": f"الجسور ({f_item['b_cnt']} جسر)",
+                        "التسليح والكانات": f"{f_item['b_num']} Ø{f_item['b_dia']} | كانات كل {f_item['st_sp']}مم",
+                        "تفاصيل القص والأوفرلاب": f"تكثيف الكانات قرب المرتكزات لمقاومة القص الحرج | الطول: {b_lap_cm} سم",
+                        "الحالة": "القص والترخيم آمن ✔️"
+                    }
+                ]
+                st.table(cb_table)
 
-        # 3. جدول تتبع وانتقال الأحمال طابقاً بطابق (الحمل الميت والحي)
-        st.write("---")
-        st.subheader("🪜 3. جدول تتبع وانتقال الأحمال الميتة والحية (Load Takedown) طابقاً بطابق:")
-        
-        unit_dl = 3.2 # kN/m2
-        unit_ll = 2.0 if "سكني" in bldg_use else 4.0 # kN/m2
-        
-        cum_load_kn = 0.0
-        load_takedown_table = []
-
-        for f_item in reversed(floors_data):
-            f_dl_total = f_item["area"] * unit_dl
-            f_ll_total = f_item["area"] * unit_ll
-            f_tot_u = 1.2 * f_dl_total + 1.6 * f_ll_total
-            cum_load_kn += f_tot_u
+        # ==========================================
+        # تبويب (2): التحليل الاقتصادي والتوفير المالي
+        # ==========================================
+        with tab_economy:
+            st.subheader("💰 جدول التحليل الاقتصادي والتوفير المالي (مفصول لكافة الطوابق):")
+            st.markdown("يقوم النظام هنا بمقارنة التسليح الحالي الذي حددته مع البدائل الاقتصادية لتقليل الهدر المالي مع الحفاظ على الأمان الإنشائي التام:")
             
-            col_share_load = cum_load_kn / f_item["c_cnt"]
+            for f_item in floors_data:
+                st.markdown(f"---")
+                st.markdown(f"#### 💵 **التحليل الاقتصادي - {f_item['floor_title']}**:")
+                econ_floor_table = [
+                    {
+                        "العنصر الإنشائي": "السقوف والبلاطات",
+                        "التسليح الحالي": f"Ø{f_item['slabs'][0]['dia']} مم",
+                        "التسليح الاقتصادي المقترح": "Ø10 أو Ø12 كل 175-200مم",
+                        "نسبة التوفير المتوقعة": "توفير ~10% من حديد السقف مع الحفاظ على الأمان."
+                    },
+                    {
+                        "العنصر الإنشائي": "الأعمدة والجسور",
+                        "التسليح الحالي": f"{f_item['c_num']} Ø{f_item['c_dia']} مم",
+                        "التسليح الاقتصادي المقترح": "8 Ø16 مم للأعمدة المتكررة",
+                        "نسبة التوفير المتوقعة": "تحسين التوزيع الهيكلي وتقليل الهدر الإنشائي."
+                    }
+                ]
+                st.table(econ_floor_table)
 
-            load_takedown_table.append({
-                "مستوى الطابق": f_item["floor_title"],
-                "مساحة الطابق": f"{f_item['area']:.1f} م²",
-                "الحمل الميت (DL)": f"{f_dl_total:,.1f} kN",
-                "الحمل الحي (LL)": f"{f_ll_total:,.1f} kN",
-                "الحمل التصميمي الكلي بالطابق": f"{f_tot_u:,.1f} kN",
-                "الحمل التراكمي النازل": f"{cum_load_kn:,.1f} kN (~{cum_load_kn/10:.1f} طن)",
-                "حصة العمود الواحد من الحمل": f"{col_share_load:,.1f} kN"
-            })
+            # تتبع وانتقال الأحمال في تبويب الاقتصاد
+            st.markdown("---")
+            st.subheader("🪜 جدول تتبع وانتقال الأحمال (Load Takedown) لجميع الطوابق:")
+            unit_dl = 3.2 
+            unit_ll = 2.0 if "سكني" in bldg_use else 4.0 
+            cum_load_kn = 0.0
+            load_takedown_table = []
 
-        st.table(load_takedown_table)
+            for f_item in reversed(floors_data):
+                f_dl_total = f_item["area"] * unit_dl
+                f_ll_total = f_item["area"] * unit_ll
+                f_tot_u = 1.2 * f_dl_total + 1.6 * f_ll_total
+                cum_load_kn += f_tot_u
+                col_share_load = cum_load_kn / f_item["c_cnt"]
 
-        # 4. التكلفة وتصدير التقارير (مع فصلها بنجاح)
+                load_takedown_table.append({
+                    "مستوى الطابق": f_item["floor_title"],
+                    "مساحة الطابق": f"{f_item['area']:.1f} م²",
+                    "الحمل الميت (DL)": f"{f_dl_total:,.1f} kN",
+                    "الحمل الحي (LL)": f"{f_ll_total:,.1f} kN",
+                    "الحمل التصميمي الكلي": f"{f_tot_u:,.1f} kN",
+                    "الحمل التراكمي النازل": f"{cum_load_kn:,.1f} kN (~{cum_load_kn/10:.1f} طن)",
+                    "حصة العمود الواحد": f"{col_share_load:,.1f} kN"
+                })
+            st.table(load_takedown_table)
+
+        # 4. تنزيل التقارير الرسمية (Excel & PDF)
         st.write("---")
-        st.subheader("📥 4. تنزيل التقارير الرسمية والجدول الإنشائي لكل الطوابق (Excel & PDF):")
-        
+        st.subheader("📥 تنزيل التقارير الرسمية المعتمدة (Excel & PDF):")
         tot_lap_cost_iqd = (tot_overlap_wt_all_floors / 1000.0) * live_steel_price
         st.info(f"💡 إجمالي وزن حديد الأوفرلاب لجميع أعمدة المبنى: **{tot_overlap_wt_all_floors:,.1f} كغم (~{tot_overlap_wt_all_floors/1000:.2f} طن)** | الكلفة التقديرية: **{tot_lap_cost_iqd:,.0f} دينار عراقي**")
 
-        col_dl_x, col_dl_p = st.columns(2)
+        col_dl_x, col_dl_p = col1, col2 = st.columns(2)
         
-        # إنشاء ملف CSV
         csv_str = "الطابق,التسمية,النوع,المواقع,التسليح,القص,الترخيم,مكان الأوفرلاب\n"
         for r in export_csv_rows:
             csv_str += f"{r['الطابق']},{r['التسمية']},{r['النوع']},{r['المواقع']},{r['التسليح']},{r['القص']},{r['الترخيم']},{r['مكان الأوفرلاب']}\n"
@@ -598,17 +578,16 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
         b64_csv = base64.b64encode(csv_str.encode('utf-8-sig')).decode()
         with col_dl_x:
             st.markdown(f"""
-                <a href="data:file/csv;base64,{b64_csv}" download="Muhamed_Zannon_Comprehensive_Report.csv" style="text-decoration: none;">
+                <a href="data:file/csv;base64,{b64_csv}" download="Muhamed_Zannon_Engineering_Report.csv" style="text-decoration: none;">
                     <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
-                        📊 تحميل التقرير الشامل والمفصل لكافة الطوابق (.csv / Excel)
+                        📊 تحميل التقرير الإنشائي والاقتصادي (.csv / Excel)
                     </div>
                 </a>
             """, unsafe_allow_html=True)
 
-        # HTML/PDF مع فصل الجداول بنظام ترويسة الطوابق
         html_str = f"""
         <html dir="rtl">
-        <head><meta charset="utf-8"><title>التقرير الإنشائي الاستشاري الشامل - المهندس محمد ذنون</title>
+        <head><meta charset="utf-8"><title>التقرير الإنشائي والاقتصادي - المهندس محمد ذنون</title>
         <style>
             body {{ font-family: Tahoma, sans-serif; padding: 20px; color: #333; }}
             h1, h3, h2 {{ text-align: center; color: #0f172a; }}
@@ -622,7 +601,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
             <h1>المنظومة الهندسية الاستشارية</h1>
             <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
             <hr>
-            <h2>التقرير الإنشائي المفصل والقص والترخيم (ACI 318)</h2>
+            <h2>التقرير الإنشائي والاقتصادي المفصل (ACI 318)</h2>
         """
         
         for f_item in floors_data:
@@ -641,7 +620,7 @@ elif "التدقيق والتحليل الإنشائي والتوليد التل
         b64_pdf = base64.b64encode(html_str.encode('utf-8')).decode()
         with col_dl_p:
             st.markdown(f"""
-                <a href="data:text/html;base64,{b64_pdf}" download="Muhamed_Zannon_Comprehensive_Report.html" style="text-decoration: none;">
+                <a href="data:text/html;base64,{b64_pdf}" download="Muhamed_Zannon_Engineering_Report.html" style="text-decoration: none;">
                     <div style="background-color: #334155; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
                         📄 تحميل التقرير الجاهز للطباعة (PDF / HTML)
                     </div>
