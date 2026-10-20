@@ -108,9 +108,9 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         "ceramic_floor_m2": 10500,
         "porcelain_m2": 18000,
         "marble_m2": 35000,
-        "nylon_m2": 750,       # سعر متر فرش النايلون
-        "shovel_hour": 35000,   # تكلفة إيجار الشفل بالساعة
-        "roller_day": 150000    # تكلفة إيجار الحادلة باليوم
+        "nylon_m2": 750,
+        "shovel_hour": 35000,
+        "roller_day": 150000
     }
 
     modular_table_data = []
@@ -192,25 +192,27 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
     st.write("---")
 
     # ----------------------------------------------------
-    # القسم 4: أعمال الخرسانة المسلحة والحديد
+    # القسم 4: أعمال الخرسانة المسلحة والحديد (مع قطر الحديد المضاف بدقة)
     # ----------------------------------------------------
     st.subheader("4️⃣ قسم الخرسانة المسلحة وحديد التسليح")
     use_concrete = st.radio("هل تريد حساب قسم الهيكل الإنشائي (كونكريت + حديد)؟", ["نعم، احسبه", "لا، لا أريده"], horizontal=True, key="r_concrete")
     struct_cost = 0
     if "نعم" in use_concrete:
-        cc1, cc2 = st.columns(2)
+        cc1, cc2, cc3 = st.columns(3)
         with cc1:
             q_conc_vol = st.number_input("حجم الكونكريت الإنشائي (م³)", min_value=0.0, value=30.0, step=5.0, key="mod_c_vol")
         with cc2:
             q_steel_t = st.number_input("وزن حديد التسليح (طن)", min_value=0.0, value=3.5, step=0.5, key="mod_s_ton")
             steel_t_sel = st.selectbox("نوع الحديد:", ["حديد مشوه عالي المقاومة", "حديد أملس / ناعم"], key="mod_s_type")
+        with cc3:
+            steel_dia_sel = st.selectbox("قطر الحديد الشائع:", ["Ø10 مم (كانات)", "Ø12 مم (سقوف وجسور)", "Ø16 مم (أعمدة وجسور رئيسية)", "Ø20 مم (أساسات)", "Ø25 مم (أعمدة ثقيلة)"], key="mod_s_dia")
 
         conc_mat_cost = q_conc_vol * (prices["cement_bag"] * 7 + prices["sand_m3"] * 0.5 + prices["gravel_m3"] * 0.8)
         st_cost = q_steel_t * (prices["steel_plain"] if "أملس" in steel_t_sel else prices["steel_high"])
         struct_cost = conc_mat_cost + st_cost
 
         modular_table_data.append({"القسم": "قسم الإنشائي", "المادة / العنصر": "خرسانة مسلحة (أساسات/أعمدة/سقوف)", "المساحة / البعد": f"{q_conc_vol} م³", "الكمية المطلوبة": f"{q_conc_vol} م³", "الكلفة التقديرية (د.ع)": f"{conc_mat_cost:,.0f}"})
-        modular_table_data.append({"القسم": "قسم الإنشائي", "المادة / العنصر": f"حديد تسليح ({steel_t_sel})", "المساحة / البعد": f"{q_conc_vol} م³ منشأ", "الكمية المطلوبة": f"{q_steel_t} طن", "الكلفة التقديرية (د.ع)": f"{st_cost:,.0f}"})
+        modular_table_data.append({"القسم": "قسم الإنشائي", "المادة / العنصر": f"حديد تسليح ({steel_t_sel}) - قطر ({steel_dia_sel})", "المساحة / البعد": f"{q_conc_vol} م³ منشأ", "الكمية المطلوبة": f"{q_steel_t} طن", "الكلفة التقديرية (د.ع)": f"{st_cost:,.0f}"})
         grand_total_cost += struct_cost
 
     st.write("---")
@@ -280,7 +282,7 @@ if "جدول الكميات والكلف المعياري المفصل" in mode:
         if not modular_table_data:
             st.warning("⚠️ لم تقم بتفعيل أي قسم من الأقسام بالأعلى! يرجى اختيار (نعم، احسبه) لأحد الأقسام على الأقل.")
         else:
-            st.success("تم تجميع جدول كميات وكلف المشروع المعياري بنجاح تامة ✅")
+            st.success("تم تجميع جدول كميات وكلف المشروع المعياري بنجاح تام ✅")
 
             st.subheader("📑 جدول الكميات والكلف المعياري المفصل (Modular BOQ Summary):")
             st.table(modular_table_data)
