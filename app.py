@@ -72,42 +72,72 @@ mode = st.sidebar.selectbox(
 )
 
 # ==========================================
-# 0. قسم جدول الكميات والتسعير الشامل
+# لوحة التحكم الجانبية لمراقبة وتحديث أسعار السوق العراقي
+# ==========================================
+st.sidebar.write("---")
+st.sidebar.subheader("📈 مراقب أسعار السوق العراقي")
+st.sidebar.markdown("يمكنك تحديث الأسعار أدناه لتواكب التغيرات اللحظية في السوق المحلي:")
+
+live_steel_price = st.sidebar.number_input("سعر طن الحديد (د.ع)", value=980000, step=10000)
+live_cement_price = st.sidebar.number_input("سعر كيس الأسمنت (د.ع)", value=8500, step=250)
+live_brick_price = st.sidebar.number_input("سعر الطابوقة الحمراء (د.ع)", value=275, step=10)
+
+# ==========================================
+# 0. قسم جدول الكميات والتسعير الشامل والمحدّث بدقة
 # ==========================================
 if "جدول الكميات والتسعير الشامل" in mode:
     st.header("📋 جدول الكميات والتسعير الشامل (حسب الأسواق العراقية)")
-    st.markdown("أدخل المساحات أو الكميات لكل مادة، وسيقوم النظام بحساب الإجمالي مع التكلفة التقديرية بالدينار العراقي مباشرةً وتصديرها:")
+    st.markdown("أدخل المساحات واختَر بدقة أنواع الأرضيات وحديد التسليح ليتسنى للنظام منحك كلفة دقيقة:")
     st.write("---")
 
     prices = {
-        "brick_red": 275,
-        "brick_yellow": 350,
+        "brick_red": live_brick_price,
+        "brick_yellow": live_brick_price * 1.25,
         "block_20": 1250,
-        "cement_bag": 8500,
+        "cement_bag": live_cement_price,
         "sand_m3": 28000,
         "gravel_m3": 32000,
         "bourk_bag": 7000,
-        "steel_ton": 980000,
-        "ceramic_m2": 9500,
-        "marble_m2": 35000,
-        "kashi_m2": 12000
+        "steel_high": live_steel_price,
+        "steel_plain": live_steel_price + 70000,
+        "kashi_m2": 12000,
+        "ceramic_floor_m2": 10500,
+        "porcelain_m2": 18000,
+        "marble_m2": 35000
     }
 
-    st.subheader("🧮 أدخل بيانات المشروع الحالية:")
+    st.subheader("🧮 أدخل بيانات المشروع التفصيلية:")
+    
     col_t1, col_t2 = st.columns(2)
+    
     with col_t1:
-        q_brick_area = st.number_input("مساحة الجدران للطابوق (م²)", min_value=0.0, value=100.0, step=10.0)
-        brick_type_sel = st.selectbox("نوع الطابوق", ["طابوق أحمر قياسي", "طابوق أصفر فرشي/ناري", "بلوك خرساني 20سم"])
-        q_floor_area = st.number_input("مساحة الأرضيات (كاشي/مرمر/بورسلين) (م²)", min_value=0.0, value=120.0, step=10.0)
-        floor_type_sel = st.selectbox("نوع الأرضيات", ["كاشي موزاييك", "سراميك أرضيات", "مرمر طبيعي"])
+        q_brick_area = st.number_input("مساحة الجدران للطابوق (م²)", min_value=0.0, value=100.0, step=10.0, key="b_area_new")
+        brick_type_sel = st.selectbox(
+            "اختر نوع الطابوق أو البلوك المستخدم:", 
+            ["طابوق أحمر قياسي عراقي", "طابوق أصفر فرشي/ناري", "بلوك خرساني مجوف 20سم"],
+            key="b_type_new"
+        )
+        
+        q_floor_area = st.number_input("مساحة الأرضيات الإجمالية (م²)", min_value=0.0, value=120.0, step=10.0, key="f_area_new")
+        floor_type_sel = st.selectbox(
+            "اختر نوع الأرضيات الدقيق:",
+            ["كاشي موزاييك عراقي تقليدي", "سيراميك أرضيات فاخر", "بورسلين صالونات (60×60 أو 120×60)", "مرمر طبيعي للأرضيات والدرج"],
+            key="f_type_new"
+        )
 
     with col_t2:
-        q_plaster_area = st.number_input("مساحة اللبخ والإنهاءات (م²)", min_value=0.0, value=200.0, step=10.0)
-        q_concrete_vol = st.number_input("حجم الكونكريت الإنشائي (م³)", min_value=0.0, value=30.0, step=5.0)
-        q_steel_ton = st.number_input("وزن حديد التسليح التقديري (طن)", min_value=0.0, value=3.5, step=0.5)
+        q_plaster_area = st.number_input("مساحة اللبخ والإنهاءات الداخلية/الخارجية (م²)", min_value=0.0, value=200.0, step=10.0, key="p_area_new")
+        q_concrete_vol = st.number_input("حجم الكونكريت الإنشائي (م³)", min_value=0.0, value=30.0, step=5.0, key="c_vol_new")
+        
+        steel_type_sel = st.selectbox(
+            "اختر نوع ومواصفات حديد التسليح المستخدم:",
+            ["حديد عالي المقاومة مشوه (Grade 60 - fy 420)", "حديد أملس / ناعم (Plain Bars) للكانات والأشاير"],
+            key="s_type_new"
+        )
+        q_steel_ton = st.number_input("وزن حديد التسليح التقديري (طن)", min_value=0.0, value=3.5, step=0.5, key="s_ton_new")
 
     st.write("---")
-    if st.button("📊 احسب التكلفة الإجمالية والكميات للسوق العراقي", use_container_width=True):
+    if st.button("📊 احسب التكلفة الإجمالية والكميات للسوق العراقي بدقة", use_container_width=True):
         st.success("تم احتساب جدول الكميات والتسعير المالي بنجاح تام ✅")
         
         if "أصفر" in brick_type_sel:
@@ -126,15 +156,21 @@ if "جدول الكميات والتسعير الشامل" in mode:
         sand_total_m3 = round(q_brick_area * 0.03 + q_plaster_area * 0.022, 1)
         sand_cost = sand_total_m3 * prices["sand_m3"]
 
-        if "مرمر" in floor_type_sel:
+        if "بورسلين" in floor_type_sel:
+            f_cost = q_floor_area * prices["porcelain_m2"]
+        elif "سراميك" in floor_type_sel:
+            f_cost = q_floor_area * prices["ceramic_floor_m2"]
+        elif "مرمر" in floor_type_sel:
             f_cost = q_floor_area * prices["marble_m2"]
-        elif "كاشي" in floor_type_sel:
-            f_cost = q_floor_area * prices["kashi_m2"]
         else:
-            f_cost = q_floor_area * prices["ceramic_m2"]
+            f_cost = q_floor_area * prices["kashi_m2"]
 
         concrete_cost = q_concrete_vol * (prices["cement_bag"] * 7 + prices["sand_m3"] * 0.5 + prices["gravel_m3"] * 0.8)
-        steel_cost = q_steel_ton * prices["steel_ton"]
+        
+        if "أملس" in steel_type_sel:
+            steel_cost = q_steel_ton * prices["steel_plain"]
+        else:
+            steel_cost = q_steel_ton * prices["steel_high"]
 
         total_project_cost = b_cost + cement_cost + sand_cost + f_cost + concrete_cost + steel_cost
 
@@ -146,7 +182,7 @@ if "جدول الكميات والتسعير الشامل" in mode:
             {"المادة الرئيسية": "رمل ناعم للمونة واللبخ", "الكمية المطلوبة": f"{sand_total_m3} م³", "السعر التقديري (د.ع)": f"{sand_cost:,.0f}"},
             {"المادة الرئيسية": f"أرضيات ({floor_type_sel})", "الكمية المطلوبة": f"{q_floor_area} م²", "السعر التقديري (د.ع)": f"{f_cost:,.0f}"},
             {"المادة الرئيسية": "خرسانة مسلحة (مادة أولية)", "الكمية المطلوبة": f"{q_concrete_vol} م³", "السعر التقديري (د.ع)": f"{concrete_cost:,.0f}"},
-            {"المادة الرئيسية": "حديد تسليح عالي المقاومة", "الكمية المطلوبة": f"{q_steel_ton} طن", "السعر التقديري (د.ع)": f"{steel_cost:,.0f}"}
+            {"المادة الرئيسية": steel_type_sel, "الكمية المطلوبة": f"{q_steel_ton} طن", "السعر التقديري (د.ع)": f"{steel_cost:,.0f}"}
         ]
 
         st.table(table_data)
@@ -161,7 +197,6 @@ if "جدول الكميات والتسعير الشامل" in mode:
         
         col_dl1, col_dl2 = st.columns(2)
         
-        # 1. زر تحميل Excel كـ CSV احترافي يتوافق مع إكسل تماماً
         csv_content = "المادة الرئيسية,الكمية المطلوبة,السعر التقديري (دينار عراقي)\n"
         for row in table_data:
             csv_content += f"{row['المادة الرئيسية']},{row['الكمية المطلوبة']},{row['السعر التقديري (د.ع)']}\n"
@@ -177,7 +212,6 @@ if "جدول الكميات والتسعير الشامل" in mode:
                 </a>
             """, unsafe_allow_html=True)
 
-        # 2. زر تحميل تقرير PDF احترافي منسق
         html_report = f"""
         <html dir="rtl">
         <head><meta charset="utf-8"><title>تقرير جدول الكميات</title>
@@ -254,7 +288,7 @@ elif "تدقيق العناصر الإنشائية" in mode:
     st.info("قسم التدقيق الإنشائي مفعل وفق متطلبات ACI 318.")
 
 # ==========================================
-# 3. حاسبة المواد التفصيلية والموقع (مع شريط نسبة الهدر المُعاد)
+# 3. حاسبة المواد التفصيلية والموقع
 # ==========================================
 elif "حاسبة المواد التفصيلية" in mode:
     st.header("📊 حاسبة المواد التفصيلية والموقع")
@@ -263,14 +297,13 @@ elif "حاسبة المواد التفصيلية" in mode:
     
     sub_choice = st.selectbox("اختر المادة المراد حسابها:", ["الطابوق والبلوك", "الأرضيات", "مواد الإنهاءات (لبخ وبورك)"])
     
-    # شريط نسبة الهدر (أعيد وضعه هنا كما طلبته بدقة)
     waste_pct = st.slider("نسبة الهدر في الموقع (%)", 0, 15, 5, key="waste_slider_detailed")
 
     if "الطابوق" in sub_choice:
         w_area = st.number_input("مساحة الجدار (م²)", value=50.0)
         b_type = st.selectbox("نوع الطابوق", ["طابوق أحمر قياسي مفرد (12سم)", "طابوق أحمر قياسي مزدوج (24سم)", "طابوق أصفر فرشي/ناري", "بلوك خرساني"])
         if st.button("احسب الطابوق"):
-            factor = 58 if "مفرد" in b_type else (116 if "جدار مزدوج" in b_type else (60 if "أصفر" in b_type else 12.5))
+            factor = 58 if "فرد" in b_type else (116 if "جدار مزدوج" in b_type else (60 if "أصفر" in b_type else 12.5))
             net_count = int(w_area * factor)
             gross_count = int(net_count * (1 + waste_pct / 100.0))
             st.success("تم الحساب بنجاح ✅")
