@@ -67,9 +67,9 @@ if st.button("🚀 إجراء التحليل والتصميم الإنشائي �
                 # رسم كروكي للمخطط والتكود
                 fig, ax = plt.subplots(figsize=(8, 6))
                 ax.plot([0, span_x, span_x, 0, 0], [0, 0, span_y, span_y, 0], 'r-', lw=2, label="البلاطة S1")
-                ax.scatter([0, span_x, span_x, 0], [0, 0, span_y, span_y], color='black', s=150, zorder=5, label="الأعمدة C1-C4")
-                ax.text(span_x/2, span_y/2, f"S1 (t={slab_res['thickness_mm']}mm)\nRebar: {slab_res['rebar']}", ha='center', va='center', bbox=dict(boxstyle="round", fc="w"))
-                ax.text(span_x/2, 0.2, f"B1: {beam_res['rebar_bottom']}", ha='center', color='blue')
+                ax.text(span_x/2, 0.2, f"B1: {beam_res.get('rebar_bottom', 'N/A')}")
+                ax.text(span_x/2, span_y/2, f"S1 (t={slab_res.get('thickness_mm', 'N/A')}mm)\\nRebar: {slab_res.get('rebar', 'N/A')}")
+                ax.text(span_x/2, 0.8, f"B1 Top: {beam_res.get('rebar_top', 'N/A')}", ha='center', color='blue')
                 ax.set_title("Framing Plan with Marking & Code Details")
                 ax.set_xlabel("X-Axis (m)")
                 ax.set_ylabel("Y-Axis (m)")
@@ -77,9 +77,9 @@ if st.button("🚀 إجراء التحليل والتصميم الإنشائي �
                 st.pyplot(fig)
                 
             with tab2:
-                st.header("المقاطع التفصيلية (Sections & Elevation)")
-                st.write(f"**مقطع الجسر الرئيسي B1:** {beam_res['rebar_top']} علوي / {beam_res['rebar_bottom']} سفلي")
-                st.write(f"**مقطع العمود الأرضي C1:** أبعاد {col_res['dimensions']} - تسليح {col_res['rebar']}")
+                st.write(f"**B1: مقطع الجسر الرئيسي** أعلى: {beam_res.get('rebar_top', 'N/A')} | سفلي: {beam_res.get('rebar_bottom', 'N/A')}")
+                st.write(f"**C1: مقطع العمود الرئيسي** أبعاد: {col_res.get('dimensions', 'N/A')} | تسليح: {col_res.get('rebar', 'N/A')}")
+                st.write(f"**F1: مقطع الأساس المنفرد** أبعاد: {foot_res.get('dimensions', 'N/A')} | تسليح: {foot_res.get('rebar', 'N/A')}")
                 st.write(f"**مقطع الأساس المنفرد F1:** أبعاد {foot_res['dimensions']} - تسليح {foot_res['rebar']}")
                 
             with tab3:
