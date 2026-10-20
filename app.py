@@ -2,6 +2,8 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import math
+import pandas as pd
+import io
 
 st.set_page_config(page_title="المنظومة الهندسية الاستشارية - م. محمد ذنون", layout="wide")
 
@@ -10,32 +12,10 @@ st.set_page_config(page_title="المنظومة الهندسية الاستشا�
 # ==========================================
 st.markdown("""
     <style>
-    /* تغيير الخطوط العامة وتنسيق الخلفية */
-    .main {
-        background-color: #f8f9fa;
-    }
-    /* تنسيق البطاقات الإحصائية */
-    .metric-card {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border-right: 5px solid #0d47a1;
-        margin-bottom: 15px;
-    }
-    /* تنسيق العناوين الكبرى */
-    h1, h2, h3 {
-        color: #1e293b;
-        font-family: 'Segoe UI', Tahoma, sans-serif;
-    }
-    /* تخصيص الشريط الجانبي */
-    [data-testid="stSidebar"] {
-        background-color: #0f172a;
-        color: #ffffff;
-    }
-    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stButton button {
-        color: #ffffff;
-    }
+    .main { background-color: #f8f9fa; }
+    h1, h2, h3 { color: #1e293b; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    [data-testid="stSidebar"] { background-color: #0f172a; color: #ffffff; }
+    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stButton button { color: #ffffff; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -86,7 +66,7 @@ mode = st.sidebar.selectbox(
     [
         "🏡 التصميم المعماري وتوزيع المساحات والخرائط", 
         "🔍 تدقيق العناصر الإنشائية (ACI 318)",
-        "📊 حساب الكميات وهندسة الكلف (BOQ & Materials)"
+        "📊 حساب الكميات وهندسة الكلف (BOQ & Excel Export)"
     ]
 )
 
@@ -337,11 +317,11 @@ elif "تدقيق" in mode:
         col_results.append({"العمود": f"C{k+1}", "المكان": c_loc, "الأبعاد": f"{c_dim1}x{c_dim2} mm", "الحمل المحسوب": f"{P_u:.1f} kN", "الحالة": col_status, "الحديد": col_reb})
 
 # ==========================================
-# 3. قسم حساب الكميات وهندسة الكلف (BOQ) مع تفاصيل السوق العراقي
+# 3. قسم حساب الكميات وهندسة الكلف (BOQ) مع التصدير إلى Excel
 # ==========================================
 elif "حساب الكميات" in mode:
-    st.header("📊 قسم حساب الكميات والمواد الإنشائية (BOQ - Bill of Quantities)")
-    st.markdown("إشراف وتطوير: **م. محمد ذنون عبد شريف** | حساب كميات المواد للموقع بدقة حسب السوق العراقي:")
+    st.header("📊 قسم حساب الكميات والمواد الإنشائية (BOQ & Excel Export)")
+    st.markdown("إشراف وتطوير: **م. محمد ذنون عبد شريف** | حساب كميات المواد للموقع بدقة وتصديرها كملف Excel:")
     st.write("---")
 
     boq_type = st.selectbox(
@@ -355,6 +335,10 @@ elif "حساب الكميات" in mode:
             "⚙️ حديد التسليح التقديري (Rebar Estimation)"
         ]
     )
+
+    # تخزين مؤقت للنتائج لجعل التصدير إلى Excel ممكناً
+    if "boq_export_data" not in st.session_state:
+        st.session_state["boq_export_data"] = []
 
     # 1. قسم الطابوق والبلوك العراقي
     if "الطابوق والبلوك" in boq_type:
@@ -409,7 +393,11 @@ elif "حساب الكميات" in mode:
             with c_res2: 
                 st.metric("🧪 حجم المونة السمنتية اللازمة", f"{mortar_vol:.2f} م³")
             
-            st.info("💡 ملاحظة استشارية عراقية: لخلطة المونة لكل 1 متر مكعب، يُعتمد (4.5 كيس أسمنت + 0.52 متر مكعب رمل ناعم نظيف).")
+            # تسجيل البيانات للـ Excel
+            st.session_state["boq_export_data"] = [
+                {"المادة / العنصر": title_item, "المساحة / الحجم": f"{wall_area} م²", "الكمية الصافية": net_count, "نسبة الهدر": f"{waste_pct}%", "الكمية الكلية للشراء": gross_count, "وحدة القياس": "قطعة"},
+                {"المادة / العنصر": "مونة سمنتية للطابوق/البلوك", "المساحة / الحجم": f"{wall_area} م²", "الكمية الصافية": round(mortar_vol, 2), "نسبة الهدر": "-", "الكمية الكلية للشراء": round(mortar_vol, 2), "وحدة القياس": "متر مكعب (م³)"}
+            ]
 
     # 2. قسم الأرضيات (كاشي، مرمر، بورسلين)
     elif "الأرضيات" in boq_type:
@@ -449,7 +437,9 @@ elif "حساب الكميات" in mode:
                     pieces_count = int(gross_floor_area / 0.72)
                     st.metric("🧩 عدد قطع البورسلين (120×60)", f"{pieces_count:,} قطعة")
 
-            st.info("💡 ملاحظة موقعية: يُضاف لصق البورسلين/المرمر (لاصق سيراميك أو رمل وطحين أسمنت) بمعدل 1 كيس لاصق لكل 4-5 متر مربع تقريباً.")
+            st.session_state["boq_export_data"] = [
+                {"المادة / العنصر": flooring_type, "المساحة / الحجم": f"{floor_area} م²", "الكمية الصافية": floor_area, "نسبة الهدر": f"{wastage_tile}%", "الكمية الكلية للشراء": round(gross_floor_area, 1), "وحدة القياس": "متر مربع (م²)"}
+            ]
 
     # 3. قسم سيراميك الجدران والأرضيات
     elif "سيراميك الجدران" in boq_type:
@@ -474,7 +464,10 @@ elif "حساب الكميات" in mode:
             total_cer = ceramic_area * (1 + c_waste / 100.0)
             st.success("تم استخراج مساحة السيراميك الكلية مع الهدر بنجاح ✅")
             st.metric("📦 المساحة الإجمالية المطلوبة للشراء", f"{total_cer:.1f} م²")
-            st.info("💡 يفضل شراء دفعة واحدة (Same Batch) لمنع اختلاف درجات الألوان (الـ Tonality) في السوق.")
+            
+            st.session_state["boq_export_data"] = [
+                {"المادة / العنصر": f"سيراميك ({ceramic_size})", "المساحة / الحجم": f"{ceramic_area} م²", "الكمية الصافية": ceramic_area, "نسبة الهدر": f"{c_waste}%", "الكمية الكلية للشراء": round(total_cer, 1), "وحدة القياس": "متر مربع (م²)"}
+            ]
 
     # 4. الكونكريت والقوالب للأعمدة
     elif "الكونكريت والقوالب للأعمدة" in boq_type:
@@ -511,6 +504,11 @@ elif "حساب الكميات" in mode:
             with rc2: st.metric("🪵 مساحة القوالب (Formwork)", f"{formwork_area:.2f} م²")
             with rc3: st.metric("🔩 عدد الأعمدة المحسوبة", f"{num_columns} عمود")
 
+            st.session_state["boq_export_data"] = [
+                {"المادة / العنصر": f"كونكريت أعمدة ({col_shape}) - {num_columns} عمود", "المساحة / الحجم": f"{col_height} متر ارتفاع", "الكمية الصافية": round(total_concrete, 2), "نسبة الهدر": "2%", "الكمية الكلية للشراء": round(total_concrete * 1.02, 2), "وحدة القياس": "متر مكعب (م³)"},
+                {"المادة / العنصر": f"قوالب خشبية/حديدية للأعمدة ({col_shape})", "المساحة / الحجم": f"{num_columns} عمود", "الكمية الصافية": round(formwork_area, 2), "نسبة الهدر": "-", "الكمية الكلية للشراء": round(formwork_area, 2), "وحدة القياس": "متر مربع (م²)"}
+            ]
+
     # 5. مواد الإنهاءات الشائعة (لبخ وبورك)
     elif "مواد الإنهاءات الشائعة" in boq_type:
         st.subheader("🧪 حساب مواد الإنهاءات الشائعة في الموقع العراقي (لبخ أسمنتي وبياض بورك)")
@@ -524,10 +522,19 @@ elif "حساب الكميات" in mode:
                 st.success("حسابات اللبخ الأسمنتي جاهزة:")
                 st.metric("📦 أكياس الأسمنت المطلوبة", f"{math.ceil(cement_bags)} كيس")
                 st.metric("🏜️ كمية الرمل الناعم", f"{sand_m3:.2f} م³")
+                
+                st.session_state["boq_export_data"] = [
+                    {"المادة / العنصر": "أسمنت (لبخ جدران سمك 2 سم)", "المساحة / الحجم": f"{fin_area} م²", "الكمية الصافية": math.ceil(cement_bags), "نسبة الهدر": "0%", "الكمية الكلية للشراء": math.ceil(cement_bags), "وحدة القياس": "كيس"},
+                    {"المادة / العنصر": "رمل ناعم (لبخ جدران)", "المساحة / الحجم": f"{fin_area} م²", "الكمية الصافية": round(sand_m3, 2), "نسبة الهدر": "0%", "الكمية الكلية للشراء": round(sand_m3, 2), "وحدة القياس": "متر مكعب (م³)"}
+                ]
             else:
                 bourk_bags = fin_area * 0.25
                 st.success("حسابات بياض البورك الجاهزة (حسب الاستخدام الشائع بالعراق):")
                 st.metric("🤍 أكياس البورك المطلوبة", f"{math.ceil(bourk_bags)} كيس")
+
+                st.session_state["boq_export_data"] = [
+                    {"المادة / العنصر": "بياض بورك (جدران داخلية سمك 1.5سم)", "المساحة / الحجم": f"{fin_area} م²", "الكمية الصافية": math.ceil(bourk_bags), "نسبة الهدر": "0%", "الكمية الكلية للشراء": math.ceil(bourk_bags), "وحدة القياس": "كيس"}
+                ]
 
     # 6. حديد التسليح التقديري
     elif "حديد التسليح التقديري" in boq_type:
@@ -540,3 +547,28 @@ elif "حساب الكميات" in mode:
             total_steel_kg = elem_vol * ratio
             st.success("تم تقدير أطنان الحديد للموقع بنجاح ✅")
             st.metric("⚙️ الوزن الكلي للحديد (مع الأشاير والتلابيب)", f"{total_steel_kg:.1f} كغ ({total_steel_kg/1000:.2f} طن)")
+
+            st.session_state["boq_export_data"] = [
+                {"المادة / العنصر": f"حديد تسليح لـ ({element_type})", "المساحة / الحجم": f"{elem_vol} م³ خرسانة", "الكمية الصافية": round(total_steel_kg, 1), "نسبة الهدر": "5% (تداخل واشاير)", "الكمية الكلية للشراء": round(total_steel_kg * 1.05, 1), "وحدة القياس": "كغ"}
+            ]
+
+    # زر تصدير جدول الكميات إلى ملف Excel الاحترافي
+    if st.session_state["boq_export_data"]:
+        st.write("---")
+        st.subheader("📥 تحميل جدول الكميات بصيغة Excel")
+        
+        df_boq = pd.DataFrame(st.session_state["boq_export_data"])
+        
+        # إنشاء ملف Excel في الذاكرة لتنزيله مباشرة عبر Streamlit
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_boq.to_excel(writer, index=False, sheet_name='Bill of Quantities')
+        processed_data = output.getvalue()
+
+        st.download_button(
+            label="📊 اضغط هنا لتنزيل تقرير BOQ بصيغة Excel (.xlsx)",
+            data=processed_data,
+            file_name="Muhamed_Zannon_BOQ_Report.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
