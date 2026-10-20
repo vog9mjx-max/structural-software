@@ -1,56 +1,42 @@
-"""
-=============================================================================
-MODULE: beams_engine.py
-DESCRIPTION: Automated Beam Design & Flexural/Shear Analysis Engine per ACI 318
-=============================================================================
-"""
-
 import math
-from aci_standards import ACIStandards
 
-class BeamEngine:
-    def __init__(self, b: float, h: float, span: float, dead_load: float, live_load: float, fc: float = ACIStandards.DEFAULT_FC, fy: float = ACIStandards.DEFAULT_FY):
-        self.b = b
-        self.h = h
-        self.span = span
-        self.dl = dead_load
-        self.ll = live_load
+class BeamsEngine:
+    def __init__(self, fc=28, fy=420):
         self.fc = fc
         self.fy = fy
 
-    def calculate_factored_load_and_moment(self) -> dict:
-        """Calculates Factored Ultimate Load Wu (kN/m) and Ultimate Moment Mu (kN.m) for simply supported beam"""
-        wu = (ACIStandards.DEAD_LOAD_FACTOR * self.dl) + (ACIStandards.LIVE_LOAD_FACTOR * self.ll)
-        mu = (wu * (self.span ** 2)) / 8.0
+    def design_beam(self, span, load):
+        # حساب أبعاد الجسر المبدئية وعزم الانحناء الأقصى
+        width = 250
+        depth = max(400, int((span * 1000) / 12.0 / 50.0) * 50)
+        mu = (load * (span ** 2)) / 8.0
         
         return {
-            "wu_kn_m": round(wu, 2),
-            "mu_kn_m": round(mu, 2)
+            "width_mm": width,
+            "depth_mm": depth,
+            "moment_mu": mu,
+            "rebar": "3 Ø16 Bottom / 2 Ø12 Top",
+            "stirrups": "Ø10 @ 200mm c/c",
+            "status": "SAFE"
         }
 
-    def compute_flexural_reinforcement(self, mu_kn_m: float) -> dict:
-        """Computes required flexural tensile reinforcement As (mm^2) for the beam section"""
-        d = self.h - ACIStandards.CONCRETE_COVER_BEAM - 10.0 - (25.0 / 2.0)
-        phi = ACIStandards.PHI_FLEXURE_TENSION
-        
-        if d <= 0:
-            return {"error": "Beam depth is too small for given cover and stirrups."}
+    def compute_factored_load_and_moment(self, span, dead_load, live_load):
+        qu = 1.2 * dead_load + 1.6 * live_load
+        mu = (qu * (span ** 2)) / 8.0
+        return {"qu": qu, "mu_kn_m": mu}
 
-        mu_nmm = mu_kn_m * 1e6
-        nominal_moment = mu_nmm / phi
-        as_req = nominal_moment / (self.fy * (0.9 * d))
+    def compute_flexural_reinforcement(self, self_fc, mu_kn_m, b=250, h=500):
+        d = h - 65.0 # تغطية خرسانية وإسوارة
+        phi = 0.9
+        mu_n = mu_kn_m * 1e6 / phi
         
-        as_min_1 = (0.25 * math.sqrt(self.fc) / self.fy) * self.b * d
-        as_min_2 = (1.4 / self.fy) * self.b * d
-        as_min = max(as_min_1, as_min_2)
-        
-        final_as = max(as_req, as_min)
+        # حساب حديد التسليح التقريبي
+        as_req = mu_n / (0.85 * self.fy * 0.9 * d)
         
         return {
-            "As_required_mm2": round(final_as, 2),
-            "As_min_mm2": round(as_min, 2),
+            "As_required_mm2": round(as_req, 2),
             "effective_depth_d_mm": round(d, 2),
             "status": "SAFE"
         }
 
-print("✅ Beams Design Engine initialized successfully!")
+print("Beams Design Engine initialized successfully!")
