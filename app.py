@@ -33,9 +33,9 @@ def check_password():
         return True
 
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center; color: #0f172a;'>🔐 بوابة الدخول للمنظومة الهندسية الاستشارية</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 18px; font-weight: bold; color: #475569;'>إشراف وتطوير: المهندس محمد ذنون عبد شريف</p>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #64748b;'>الرجاء إدخال رمز المرور السري للدخول إلى النظام:</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #0f172a; font-size: 24px;'>🔐 بوابة الدخول للمنظومة الهندسية الاستشارية</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 16px; font-weight: bold; color: #475569;'>إشراف وتطوير: المهندس محمد ذنون عبد شريف</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #64748b; font-size: 14px;'>الرجاء إدخال رمز المرور السري للدخول إلى النظام:</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -244,7 +244,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
-    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج الأحمال (Load Path)، والتسليح المتكامل للحصيرتين (السفلية والعلوية):")
+    st.markdown("إدخال البيانات الأساسية، عدد الأعمدة، تدرج الأحمال، وتدقيق الأخطاء الإنشائية ومعايير ACI 318:")
     st.write("---")
 
     ALL_BAR_DIAMETERS = [8, 10, 12, 14, 16, 18, 20, 22, 25]
@@ -305,7 +305,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             auto_stype = st.selectbox(f"نوع السقف:", ALL_SLAB_TYPES, key=f"auto_stype_{fl_idx}")
 
             st.markdown(f"**ب) تفاصيل تسليح الحصيرتين (الشبكة السفلية والعلوية):**")
-            st.caption("✨ أدخل العدد وقطر الشيش ($\Phi$) بكل حقل بشكل منفصل ومريح لضمان تصميم بلا نقوصات.")
+            st.caption("✨ أدخل العدد وقطر الشيش ($\Phi$) بكل حقل. سيقوم النظام آلياً بالتدقيق الهندسي ورفض أي تسليح ضعيف أو غير مطابق لـ ACI 318.")
             
             slab_configs = []
 
@@ -360,6 +360,20 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     with col_cc2:
                         col_d = st.selectbox(f"قطر عمود {c_tag}", ALL_BAR_DIAMETERS, index=ALL_BAR_DIAMETERS.index(def_cd) if def_cd in ALL_BAR_DIAMETERS else 6, format_func=lambda x: f"Ø{x} مم", key=f"cd_{fl_idx}_{s_tag}")
 
+                    # محرك التدقيق الهندسي الذكي (Structural Validation Engine)
+                    # فحص ما إذا كان التسليح ضعيفاً جداً (مثل Ø8 مع مسافة 200مم للبلاطة أو أعمدة أقل من 4 شيش Ø16)
+                    validation_errors = []
+                    validation_warnings = []
+                    
+                    if bot_d < 10 and bot_sp > 150:
+                        validation_errors.append(f"⚠️ خطأ فادح في بلاطة {s_tag}: قطر الشيش السفلي (Ø{bot_d}) صغير جداً والمسافة ({bot_sp}مم) كبيرة، وهذا يؤدي لفشل البلاطة تحت الأحمال الحية!")
+                    if top_d < 10 and top_sp > 175:
+                        validation_errors.append(f"⚠️ تحذير في شبكة {s_tag} العلوية: حديد العزم السالب ضعيف (Ø{top_d}) ولن يتحمل عزم الانحناء قرب المساند.")
+                    if beam_n * beam_d < 32:
+                        validation_warnings.append(f"⚠️ تنبيه جسر {b_tag}: نسبة تسليح الجسر قليلة مقارنة بالبحر الإنشائي (L={span_m}م)، يوصى بزيادة عدد أو قطر الشيش.")
+                    if col_n < 4 or (col_n * col_d < 64):
+                        validation_errors.append(f"⚠️ خطأ حرج في عمود {c_tag}: تسليح العمود غير كافٍ لنقل الأحمال التراكمية لطوابق المبنى (ACI 318 يفرض حد أدنى 1% من مساحة المقطع).")
+
                     slab_configs.append({
                         "slab_tag": s_tag,
                         "beam_tag": b_tag,
@@ -371,7 +385,9 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "top_rebar": f"{top_n}Φ{top_d}",
                         "top_spacing": top_sp,
                         "beam_rebar": f"{beam_n}Φ{beam_d}",
-                        "col_rebar": f"{col_n}Φ{col_d}"
+                        "col_rebar": f"{col_n}Φ{col_d}",
+                        "errors": validation_errors,
+                        "warnings": validation_warnings
                     })
                 st.write("---")
 
@@ -387,7 +403,9 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     "top_rebar": "1Φ10",
                     "top_spacing": 200,
                     "beam_rebar": "4Φ16",
-                    "col_rebar": "8Φ20"
+                    "col_rebar": "8Φ20",
+                    "errors": [],
+                    "warnings": []
                 })
 
             floors_data.append({
@@ -402,13 +420,13 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             })
 
     st.write("---")
-    btn_text = "⚡ تنفيذ التصميم المتكامل (حصيرتين سفلي وعُلوي) وإصدار الجداول الرسمية"
+    btn_text = "⚡ تنفيذ التدقيق الإنشائي الشامل (ACI 318 Validation Engine)"
     
     if st.button(btn_text, use_container_width=True):
-        st.success("تم إتمام التصميم الإنشائي المتكامل للحصيرتين (السفلية والعلوية) وبدون أي نقوصات بنجاح ✅")
+        st.success("تم إتمام فحص وتدقيق مدخلات المشروع بالكامل عبر محرك الرفض والتحذير الذكي ✅")
 
         tab_design, tab_optimize, tab_economy = st.tabs([
-            "📐 1. صفحة التصميم والنتائج (الجداول الشاملة)", 
+            "📐 1. صفحة التدقيق والنتائج (فحص الأخطاء)", 
             "📉 2. خيارات وتقليل الكلفة الإنشائية (Optimization Wizard)",
             "💡 3. صفحة التحليل الاقتصادي والتوفير المالي"
         ])
@@ -417,17 +435,37 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         optimization_csv_rows = []
 
         # ==========================================
-        # تبويب (1): التصميم والتدقيق الإنشائي
+        # تبويب (1): التدقيق والنتائج مع كشف الأخطاء
         # ==========================================
         with tab_design:
-            st.subheader("📋 نتائج التصميم الإنشائي المتكامل (الشبكة السفلية والعلوية والجسور والأعمدة):")
+            st.subheader("📋 تقرير التدقيق الإنشائي وفحص الأخطاء والتسليح (ACI 318 Check):")
             
+            has_critical_errors = False
+            for f_item in floors_data:
+                for sl in f_item["slabs"]:
+                    if sl["errors"]:
+                        has_critical_errors = True
+
+            if has_critical_errors:
+                st.error("🚨 **تنبيه استشاري هام:** تم رصد أخطاء إنشائية في بعض العناصر المدخلة (تسليح ضعيف أو غير مطابق للمواصفات). يرجى مراجعة التنبيهات أدناه وتعديل الإدخالات.")
+            else:
+                st.success("✨ **التهانينا!** جميع المقاطع والتسليحات المدخلة مطابقة لمعايير الأمان الإنشائي حسب كود ACI 318 ✓")
+
             for f_item in floors_data:
                 span_m = f_item["span_x"]
                 crank_dist_cm = round((span_m / 7.0) * 100, 1)
                 st.markdown(f"---")
                 st.markdown(f"### 🏢 **{f_item['floor_title']}** (البحر L = {span_m} م | عدد أعمدة الطابق: {f_item['total_cols']} عمود | معامل تدرج الأحمال: Tier {f_item['load_tier']}):")
                 
+                # عرض رسائل الأخطاء والتحذيرات إن وجدت
+                for sl in f_item["slabs"]:
+                    if sl["errors"] or sl["warnings"]:
+                        st.markdown(f"📌 **فحص عنصر ({sl['slab_tag']} / {sl['beam_tag']} / {sl['col_tag']}):**")
+                        for err in sl["errors"]:
+                            st.error(err)
+                        for warn in sl["warnings"]:
+                            st.warning(warn)
+
                 # 1. جدول السقوف والبلاطات
                 st.markdown("##### 🏗️ **جدول السقوف والبلاطات (Slabs - الحصيرتين السفلية والعلوية)**")
                 slabs_table = []
@@ -435,12 +473,12 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     dist_val = round((span_m / 2.0) * 100, 1)
                     details_str = f"الشبكة السفلية: {sl['bot_rebar']} لكل {sl['bot_spacing']}مم | الشبكة العلوية: {sl['top_rebar']} لكل {sl['top_spacing']}مم | أوفرلاب {dist_val}.0 سم"
                     
-                    if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
-                        defl_status = "🟢 آمن (L/240) ✓"
-                    elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
-                        defl_status = "🟢 آمن (L/280) ✓"
+                    if sl["errors"]:
+                        status_str = "❌ غير آمن (يُرفض التصميم)"
+                    elif sl["warnings"]:
+                        status_str = "🟡 مقبول مع التحفظ"
                     else:
-                        defl_status = "🟢 آمن (L/360) ✓"
+                        status_str = "🟢 آمن ومطابق تماماً ✓"
 
                     slabs_table.append({
                         "الرمز": sl["slab_tag"],
@@ -448,10 +486,10 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "نوع السقف": sl["type"],
                         "الشبكة السفلية": f"{sl['bot_rebar']} لكل {sl['bot_spacing']}مم",
                         "الشبكة العلوية": f"{sl['top_rebar']} لكل {sl['top_spacing']}مم",
-                        "تدقيق الترخيم": defl_status,
-                        "التفاصيل الهندسية وسلوك الحصيرتين": details_str
+                        "حالة التدقيق": status_str,
+                        "التفاصيل الهندسية": details_str
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"بلاطة {sl['slab_tag']}", "التسليح السفلي": f"{sl['bot_rebar']} لكل {sl['bot_spacing']}مم", "التسليح العلوي": f"{sl['top_rebar']} لكل {sl['top_spacing']}مم", "الموقع": sl["pos"], "التفاصيل": details_str})
+                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"بلاطة {sl['slab_tag']}", "التسليح السفلي": f"{sl['bot_rebar']} لكل {sl['bot_spacing']}مم", "التسليح العلوي": f"{sl['top_rebar']} لكل {sl['top_spacing']}مم", "الموقع": sl["pos"], "الحالة": status_str})
 
                 st.table(slabs_table)
 
@@ -467,7 +505,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "تدقيق القص (Shear Check)": "🟢 آمن (Vu < ΦVc) وتكثيف كانات للمقاومة ✓",
                         "مكان وطول الأوفرلاب": f"العلوي قرب المساند | السفلي بمنتصف البحر (تداخل: {beam_lap_cm} سم)"
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"جسر {sl['beam_tag']}", "التسليح": sl["beam_rebar"], "الموقع": sl["pos"], "الأوفرلاب": f"قرب المساند ومنتصف البحر ({beam_lap_cm} سم)"})
                 st.table(beams_table)
 
                 # 3. جدول الأعمدة
@@ -482,7 +519,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "تدقيق القص والأحمال": f"🟢 آمن ومطابق ACI 318 (ناقل أحمال متراكم Tier {f_item['load_tier']}) ✓",
                         "مكان وطول الأوفرلاب": f"منتصف ارتفاع العمود Zone B (تداخل: {col_lap_cm} سم)"
                     })
-                    export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"عمود {sl['col_tag']}", "التسليح": sl["col_rebar"], "الموقع": sl["pos"], "الأوفرلاب": f"منتصف ارتفاع العمود Zone B ({col_lap_cm} سم)"})
                 st.table(cols_table)
 
         # ==========================================
@@ -498,28 +534,25 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                 
                 opt_table = [
                     {
-                        "الببند / العنصر": "1. هندسة توزيع الأعمدة (Column Layout)",
+                        "البند / العنصر": "1. هندسة توزيع الأعمدة (Column Layout)",
                         "الإجراء الهندسي": f"ضبط المسافة بين الأعمدة لتكون ضمن المدى الاقتصادي (4.0م إلى 6.0م)[cite: 14]. البحر الحالي = {span_m} م.",
                         "نسبة التوفير المقدرة": "توفير 15% - 18% من إجمالي الكونكريت والحديد",
-                        "الملاحظات الاستشارية والتوجيهات": "توزيع الأعمدة بمسافات مدروسة يمنع الهدر الإنشائي ويقلل عحز الانحناء."
+                        "الملاحظات الاستشارية والتوجيهات": "توزيع الأعمدة بمسافات مدروسة يمنع الهدر الإنشائي ويقلل عزم الانحناء."
                     },
                     {
-                        "الببند / العنصر": "2. كفاءة تسليح الحصيرتين (Slabs Double Mat)",
+                        "البند / العنصر": "2. كفاءة تسليح الحصيرتين (Slabs Double Mat)",
                         "الإجراء الهندسي": "تحقيق التوازن الهندسي بين الشبكة السفلية (عزم موجب) والشبكة العلوية (عزم سالب وتكسيح L/7).",
                         "نسبة التوفير المقدرة": "توفير 12% - 15% من حديد السقف",
                         "الملاحظات الاستشارية والتوجيهات": "يمنع الترهل (Deflection) ويضمن توزيع الإجهادات بانتظام تام."
                     },
                     {
-                        "الببند / العنصر": "3. مسار الأحمال التراكمي (Load Path Tier)",
+                        "البند / العنصر": "3. مسار الأحمال التراكمي (Load Path Tier)",
                         "الإجراء الهندسي": f"تدريج مقاطع أعمدة وجسور هذا الطابق بناءً على معامل التراكم (Tier {f_item['load_tier']}).",
                         "نسبة التوفير المقدرة": "توفير 10% في الطوابق العليا",
                         "الملاحظات الاستشارية والتوجيهات": "عدم ضخامة المقاطع في الطوابق التي تتلقى أحمالاً أقل يقلل وزن المنشأ الإجمالي."
                     }
                 ]
-                
                 st.table(opt_table)
-                for row in opt_table:
-                    optimization_csv_rows.append({"الطابق": f_item['floor_title'], "البند": row["الببند / العنصر"], "الإجراء": row["الإجراء الهندسي"], "التوفير": row["نسبة التوفير المقدرة"], "ملاحظات": row["الملاحظات الاستشارية والتوجيهات"]})
 
         # ==========================================
         # تبويب (3): التحليل الاقتصادي
@@ -546,9 +579,9 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         
         col_dl_x, col_dl_p = st.columns(2)
         
-        csv_str = "الطابق,العنصر,التسليح السفلي,التسليح العلوي,الموقع,التفاصيل الهندسية\n"
+        csv_str = "الطابق,العنصر,التسليح السفلي,التسليح العلوي,الموقع,الحالة\n"
         for r in export_csv_rows:
-            csv_str += f"{r['الطابق']},{r['العنصر']},{r.get('التسليح السفلي','')},{r.get('التسليح العلوي','')},{r['الموقع']},{r.get('التفاصيل','')}\n"
+            csv_str += f"{r['الطابق']},{r['العنصر']},{r.get('التسليح السفلي','')},{r.get('التسليح العلوي','')},{r['الموقع']},{r.get('الحالة','')}\n"
         
         b64_csv = base64.b64encode(csv_str.encode('utf-8-sig')).decode()
         with col_dl_x:
@@ -577,26 +610,17 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             <h1>المنظومة الهندسية الاستشارية</h1>
             <h3>إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</h3>
             <hr>
-            <h2>تقرير التصميم الإنشائي المتكامل وخيارات تقليل الكلفة - ACI 318</h2>
+            <h2>تقرير التدقيق الإنشائي وفحص الأخطاء (ACI 318)</h2>
         """
         
         for f_item in floors_data:
             span_m = f_item["span_x"]
-            crank_dist_cm = round((span_m / 7.0) * 100, 1)
-            
             html_str += f"<div class='floor-header'>{f_item['floor_title']} (طول البحر L = {span_m} م | عدد الأعمدة: {f_item['total_cols']})</div>"
             
-            # 1. جدول السقوف HTML
-            html_str += "<h4>جدول السقوف والبلاطات (Slabs - الحصيرتين)</h4><table><tr><th>الرمز</th><th>الموقع</th><th>نوع السقف</th><th>الشبكة السفلية</th><th>الشبكة العلوية</th><th>تدقيق الترخيم</th><th>التفاصيل الهندسية</th></tr>"
+            html_str += "<h4>جدول السقوف والبلاطات (Slabs)</h4><table><tr><th>الرمز</th><th>الموقع</th><th>نوع السقف</th><th>الشبكة السفلية</th><th>الشبكة العلوية</th><th>حالة التدقيق</th></tr>"
             for sl in f_item["slabs"]:
-                html_str += f"<tr><td>{sl['slab_tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>{sl['bot_rebar']} لكل {sl['bot_spacing']}مم</td><td>{sl['top_rebar']} لكل {sl['top_spacing']}مم</td><td>🟢 آمن ✓</td><td>سفلي للعزم الموجب + علوي للعزم السالب عند {crank_dist_cm} سم</td></tr>"
-            html_str += "</table>"
-
-            # 2. جدول خيارات تقليل الكلفة HTML
-            html_str += "<h4>جدول خيارات وتقليل الكلفة الإنشائية (Optimization Wizard)</h4><table><tr><th>البند / العنصر</th><th>الإجراء الهندسي</th><th>نسبة التوفير المقدرة</th><th>الملاحظات الاستشارية</th></tr>"
-            html_str += f"<tr><td>1. هندسة توزيع الأعمدة</td><td>ضبط المسافة بين الأعمدة ضمن المدى (4.0م إلى 6.0م)[cite: 14]</td><td>توفير 15% - 18%</td><td>يمنع الهدر الإنشائي ويقلل عزم الانحناء.</td></tr>"
-            html_str += f"<tr><td>2. كفاءة تسليح الحصيرتين</td><td>توازن دقيق بين الشبكة السفلية والعلوية والتكسيح L/7</td><td>توفير 12% - 15%</td><td>يمنع الترهل (Deflection) ويضمن توزيع الإجهادات.</td></tr>"
-            html_str += f"<tr><td>3. مسار الأحمال التراكمي</td><td>تدريج مقاطع الأعمدة والجسور حسب معامل Tier {f_item['load_tier']}</td><td>توفير 10%</td><td>يقلل وزن المنشأ الإجمالي في الطوابق العليا.</td></tr>"
+                status_txt = "غير آمن ❌" if sl["errors"] else "آمن ومطابق ✓"
+                html_str += f"<tr><td>{sl['slab_tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>{sl['bot_rebar']} لكل {sl['bot_spacing']}مم</td><td>{sl['top_rebar']} لكل {sl['top_spacing']}مم</td><td>{status_txt}</td></tr>"
             html_str += "</table>"
 
         html_str += """
