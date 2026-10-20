@@ -1,69 +1,45 @@
-"""
-=============================================================================
-MODULE: slabs_engine.py
-DESCRIPTION: Automated Slab Design & Analysis Engine per ACI 318
-=============================================================================
-"""
-
 import math
-from aci_standards import ACIStandards
 
 class SlabEngine:
-    def __init__(self, lx: float, ly: float, thickness: float, dead_load: float, live_load: float, fc: float = ACIStandards.DEFAULT_FC, fy: float = ACIStandards.DEFAULT_FY):
-        self.lx = lx
-        self.ly = ly
-        self.h = thickness
-        self.dl = dead_load
-        self.ll = live_load
+    def __init__(self, fc=28, fy=420):
         self.fc = fc
         self.fy = fy
 
-    def check_two_way_action(self) -> str:
-        """Determines if the slab behaves as One-Way or Two-Way slab"""
-        beta = self.ly / self.lx
-        if beta < 2.0:
-            return "Two-Way Slab"
+    def design_one_way_slab(self, span, dead_load_extra=2.5, live_load=2.0):
+        # حساب سمك البلاطة الأدنى وفق ACI 318
+        min_thickness = (span * 1000) / 20.0
+        thickness = max(120, math.ceil(min_thickness / 10.0) * 10)
+        
+        # أوزان الأحمال
+        self_weight = (thickness / 1000.0) * 24.0  # kN/m2
+        total_dead = self_weight + dead_load_extra
+        qu = 1.2 * total_dead + 1.6 * live_load
+        
+        # حساب العزم
+        mu = (qu * (span ** 2)) / 8.0
+        
+        return {
+            "thickness_mm": thickness,
+            "dead_load": total_dead,
+            "live_load": live_load,
+            "ultimate_load_qu": qu,
+            "moment_mu": mu,
+            "rebar": "Ø10@200mm Bottom / Ø10@250mm Top"
+        }
+
+    def design_slab(self, span_x, span_y):
+        # دالة شاملة تحدد نوع البلاطة تلقائياً وتصممها
+        ratio = max(span_x, span_y) / min(span_x, span_y)
+        if ratio >= 2.0:
+            return self.design_one_way_slab(span=min(span_x, span_y))
         else:
-            return "One-Way Slab"
-
-    def calculate_ultimate_load(self) -> float:
-        """Calculates Factored Ultimate Load Wu per ACI 318 (kN/m^2)"""
-        wu = (ACIStandards.DEAD_LOAD_FACTOR * self.dl) + (ACIStandards.LIVE_LOAD_FACTOR * self.ll)
-        return wu
-
-    def check_minimum_thickness_aci(self) -> dict:
-        """Checks minimum thickness requirements for deflection control per ACI"""
-        perimeter = 2 * (self.lx * 1000 + self.ly * 1000)
-        h_min = perimeter / 180.0
-        is_adequate = self.h >= h_min
-        status = "SAFE" if is_adequate else "UNSAFE"
-        
-        return {
-            "h_provided_mm": self.h,
-            "h_min_required_mm": h_min,
-            "status": status,
-            "justification": f"Provided thickness {self.h} mm vs Minimum required {h_min:.1f} mm."
-        }
-
-    def compute_flexural_reinforcement(self, moment_kn_m: float, b_width_mm: float = 1000.0) -> dict:
-        """Computes required steel area As (mm^2) for a given bending moment"""
-        d = self.h - ACIStandards.CONCRETE_COVER_SLAB - (10.0 / 2.0)
-        phi = ACIStandards.PHI_FLEXURE_TENSION
-        
-        if d <= 0:
-            return {"error": "Effective depth is too small for given cover and thickness."}
-
-        mu = moment_kn_m * 1e6
-        nominal_moment = mu / phi
-        as_req = nominal_moment / (self.fy * (0.9 * d))
-        as_min = ACIStandards.RHO_MIN_SLAB_FLEXURE * b_width_mm * d
-        final_as = max(as_req, as_min)
-        
-        return {
-            "As_required_mm2": round(final_as, 2),
-            "As_min_mm2": round(as_min, 2),
-            "effective_depth_d_mm": round(d, 2),
-            "status": "SAFE"
-        }
-
-print("✅ Slabs Design Engine initialized successfully!")
+            # Two-way slab calculation
+            thickness = max(150, math.ceil(((span_x + span_y) * 1000 / 180) / 10.0) * 10)
+            total_dead = (thickness / 1000.0) * 24.0 + 2.5
+            live_load = 2.0
+            return {
+                "thickness_mm": thickness,
+                "dead_load": total_dead,
+                "live_load": live_load,
+                "rebar": "Ø12@200mm Mesh T&B"
+            }
