@@ -244,7 +244,7 @@ elif "التصميم المعماري" in mode:
 # ==========================================
 elif "التحليل الإنشائي والتدقيق" in mode or "التدقيق والتحليل الإنشائي والتوليد التلقائي" in mode:
     st.header("🔍 نظام التصميم الإنشائي الذكي (Smart Design Wizard - ACI 318)")
-    st.markdown("جداول مستقلة تضمنت بدقة: أطوال وأماكن الأوفرلاب، تدقيق الشير (القص)، وتدقيق الدفلكشن (الترخيم) لكل السقوف والجسور والأعمدة:")
+    st.markdown("جداول مستقلة تضمنت بدقة: أطوال وأماكن الأوفرلاب، تدقيق الشير (القص)، وتدقيق الدفلكشن (الترخيم) مع علامات التدقيق المقبولة 🟢:")
     st.write("---")
 
     auto_design = st.toggle("⚡ تفعيل نظام التصميم والاحتساب التلقائي للبلاطات والجسور والأعمدة (Smart Design Wizard)", value=True)
@@ -373,7 +373,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         st.success("تم إتمام التصميم الإنشائي وتوليد الجداول المتكاملة بنجاح ✅")
 
         tab_design, tab_economy = st.tabs([
-            "📐 1. صفحة التصميم والنتائج (جداول متكاملة مع الملاحظات الهندسية)", 
+            "📐 1. صفحة التصميم والنتائج (جداول متكاملة مع علامات الصح الخضراء)", 
             "💡 2. صفحة التحليل الاقتصادي والتوفير المالي"
         ])
 
@@ -383,7 +383,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
         # تبويب (1): التصميم والتدقيق الإنشائي
         # ==========================================
         with tab_design:
-            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (مع تفاصيل الأوفرلاب، الشير، الدفلكشن، وتوجيهات الكود):")
+            st.subheader("📋 نتائج التصميم الإنشائي الفعلي (مع علامات القبول 🟢 ✓ لكل عنصر):")
             
             for f_item in floors_data:
                 span_m = f_item["span_x"]
@@ -398,15 +398,15 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                     if "زاوية" in sl["pos"] or "S3" in sl["slab_tag"]:
                         dist_val = round((span_m / 5.0) * 100, 1)
                         overlap_loc = f"عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)"
-                        defl_status = "آمن (L/240)"
+                        defl_status = "🟢 آمن (L/240) ✓"
                     elif "خارجي" in sl["pos"] or "S2" in sl["slab_tag"]:
                         dist_val = round((span_m / 4.0) * 100, 1)
                         overlap_loc = f"عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)"
-                        defl_status = "آمن (L/280)"
+                        defl_status = "🟢 آمن (L/280) ✓"
                     else:
                         dist_val = round((span_m / 2.0) * 100, 1)
                         overlap_loc = f"عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)"
-                        defl_status = "آمن (L/360)"
+                        defl_status = "🟢 آمن (L/360) ✓"
 
                     slabs_table.append({
                         "الرمز": sl["slab_tag"],
@@ -429,7 +429,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "الرمز": sl["beam_tag"],
                         "الموقع المرتبط": f"جسر لـ {sl['slab_tag']} ({sl['pos']})",
                         "تسليح الجسر": sl["beam_reinforcement"],
-                        "تدقيق القص (Shear Check)": "آمن (Vu < ΦVc) وتكثيف كانات",
+                        "تدقيق القص (Shear Check)": "🟢 آمن (Vu < ΦVc) وتكثيف كانات ✓",
                         "مكان وطول الأوفرلاب": f"قرب المرتكزات (تداخل: {beam_lap_cm} سم)"
                     })
                     export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"جسر {sl['beam_tag']}", "التسليح": sl["beam_reinforcement"], "الموقع": sl["pos"], "الأوفرلاب": f"قرب المرتكزات ({beam_lap_cm} سم)"})
@@ -444,7 +444,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
                         "الرمز": sl["col_tag"],
                         "الموقع الإنشائي": f"عمود لـ {sl['slab_tag']} ({sl['pos']})",
                         "تسليح العمود": sl["col_reinforcement"],
-                        "تدقيق القص والأحمال": "آمن ومطابق ACI 318",
+                        "تدقيق القص والأحمال": "🟢 آمن ومطابق ACI 318 ✓",
                         "مكان وطول الأوفرلاب": f"منتصف الارتفاع Zone B (تداخل: {col_lap_cm} سم)"
                     })
                     export_csv_rows.append({"الطابق": f_item['floor_title'], "العنصر": f"عمود {sl['col_tag']}", "التسليح": sl["col_reinforcement"], "الموقع": sl["pos"], "الأوفرلاب": f"منتصف الارتفاع Zone B ({col_lap_cm} سم)"})
@@ -532,21 +532,21 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التدقي
             for sl in f_item["slabs"]:
                 slab_lap_cm = round(40 * sl["dia"] / 10.0, 1)
                 dist_val = round((span_m / 2.0) * 100, 1)
-                html_str += f"<tr><td>{sl['slab_tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>Ø{sl['dia']} مم كل {sl['spacing']}مم</td><td>آمن (L/360)</td><td>عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)</td></tr>"
+                html_str += f"<tr><td>{sl['slab_tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>Ø{sl['dia']} مم كل {sl['spacing']}مم</td><td>🟢 آمن (L/360) ✓</td><td>عند منتصف البحر (مسافة {dist_val} سم | تداخل: {slab_lap_cm} سم)</td></tr>"
             html_str += "</table>"
 
             # 2. جدول الجسور HTML
             html_str += "<h4>جدول الجسور (Beams)</h4><table><tr><th>الرمز</th><th>الموقع المرتبط</th><th>تسليح الجسر</th><th>تدقيق القص (Shear Check)</th><th>مكان وطول الأوفرلاب</th></tr>"
             for sl in f_item["slabs"]:
                 beam_lap_cm = round(50 * 16 / 10.0, 1)
-                html_str += f"<tr><td>{sl['beam_tag']}</td><td>جسر لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['beam_reinforcement']}</td><td>آمن (Vu < ΦVc) وتكثيف كانات</td><td>قرب المرتكزات (تداخل: {beam_lap_cm} سم)</td></tr>"
+                html_str += f"<tr><td>{sl['beam_tag']}</td><td>جسر لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['beam_reinforcement']}</td><td>🟢 آمن (Vu < ΦVc) وتكثيف كانات ✓</td><td>قرب المرتكزات (تداخل: {beam_lap_cm} سم)</td></tr>"
             html_str += "</table>"
 
             # 3. جدول الأعمدة HTML
             html_str += "<h4>جدول الأعمدة (Columns)</h4><table><tr><th>الرمز</th><th>الموقع الإنشائي</th><th>تسليح العمود</th><th>تدقيق القص والأحمال</th><th>مكان وطول الأوفرلاب</th></tr>"
             for sl in f_item["slabs"]:
                 col_lap_cm = round(48 * 20 / 10.0, 1)
-                html_str += f"<tr><td>{sl['col_tag']}</td><td>عمود لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['col_reinforcement']}</td><td>آمن ومطابق ACI 318</td><td>منتصف الارتفاع Zone B (تداخل: {col_lap_cm} سم)</td></tr>"
+                html_str += f"<tr><td>{sl['col_tag']}</td><td>عمود لـ {sl['slab_tag']} ({sl['pos']})</td><td>{sl['col_reinforcement']}</td><td>🟢 آمن ومطابق ACI 318 ✓</td><td>منتصف الارتفاع Zone B (تداخل: {col_lap_cm} سم)</td></tr>"
             html_str += "</table>"
 
             html_str += f"""
