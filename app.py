@@ -23,7 +23,7 @@ if "تدقيق" in mode:
     with col_m3:
         dead_load = st.number_input("الأحمال الميتة الإضافية (كاشي وتراب) kN/m²", value=2.5)
     with col_m4:
-        live_load, = st.number_input("الحمل الحي (أثاث وسكن) kN/m²", value=3.0), 3.0 if False else 3.0 # ضبط آمن
+        live_load = st.number_input("الحمل الحي (أثاث وسكن) kN/m²", value=3.0)
 
     st.write("---")
 
@@ -115,7 +115,7 @@ if "تدقيق" in mode:
         with cc1:
             c_dim1 = st.number_input(f"العرض b (mm) [C{k+1}]", value=300, key=f"cd1_{k}")
         with cc2:
-            c_dim2, = [st.number_input(f"العمق h (mm) [C{k+1}]", value=400, key=f"cd2_{k}")]
+            c_dim2 = st.number_input(f"العمق h (mm) [C{k+1}]", value=400, key=f"cd2_{k}")
         with cc3:
             c_loc = st.selectbox(f"موقع العمود [C{k+1}]", ["وسطي (Interior)", "حافة (Edge)", "ركن (Corner)"], key=f"cloc_{k}")
         with cc4:
@@ -127,7 +127,7 @@ if "تدقيق" in mode:
         trib_fact = 1.0 if "وسطي" in c_loc else (0.6 if "حافة" in c_loc else 0.35)
         P_u = 1.2 * (dead_load * area_trib * floors_c * trib_fact) + 1.6 * (live_load * area_trib * floors_c * trib_fact)
         
-        Ag = c_dim1 * c_dim2[0] if isinstance(c_dim2, list) else c_dim1 * c_dim2
+        Ag = c_dim1 * c_dim2
         P_n_max = 0.80 * 0.65 * (0.85 * fc * (Ag - 2000) + 420 * 2000) / 1000
         
         if P_u <= P_n_max:
@@ -135,7 +135,7 @@ if "تدقيق" in mode:
         else:
             col_status = "⚠️ الحمل قاصي على العمود، لازم نكبر أبعاده"
 
-        col_results.append({"العمود": f"C{k+1}", "المكان": c_loc, "الأبعاد": f"{c_dim1}x{c_dim2[0] if isinstance(c_dim2, list) else c_dim2} mm", "الحمل المحسوب": f"{P_u:.1f} kN", "الحالة": col_status, "الحديد": col_reb})
+        col_results.append({"العمود": f"C{k+1}", "المكان": c_loc, "الأبعاد": f"{c_dim1}x{c_dim2} mm", "الحمل المحسوب": f"{P_u:.1f} kN", "الحالة": col_status, "الحديد": col_reb})
 
     st.write("---")
     if st.button("📋 اعرض التقرير النهائي باللهجة العراقية"):
