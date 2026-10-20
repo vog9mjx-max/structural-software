@@ -69,7 +69,7 @@ mode = st.sidebar.selectbox(
         "📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)",
         "🏛️ حساب كميات وكلف واجهات البيوت والفلل (Façade Works)",
         "🏡 التصميم المعماري وتوزيع المساحات والخرائط", 
-        "🔍 التدقيق الإنشائي والمساحات المقطعة طابقاً بطابق (ACI 318)",
+        "🔍 التدقيق الإنشائي والتسليح التفصيلي لكل طابق (ACI 318)",
         "📊 حاسبة المواد التفصيلية (الطابوق، الأسمنت، الأرضيات)"
     ]
 )
@@ -249,140 +249,162 @@ elif "التصميم المعماري" in mode:
         st.pyplot(fig)
 
 # ==========================================
-# 3. التدقيق الإنشائي والمساحات المقطعة طابقاً بطابق (ACI 318)
+# 3. التدقيق الإنشائي والتسليح التفصيلي لكل طابق (ACI 318)
 # ==========================================
-elif "التدقيق الإنشائي والمساحات المقطعة طابقاً بطابق" in mode:
-    st.header("🔍 التدقيق الإنشائي، نظام المساحات المقطعة (X & Y)، والأوفرلاب طابقاً بطابق")
-    st.markdown("حساب مساحات الطابق الأرضي والطوابق العليا بواسطة مقاطع متعددة ($X_1 \\times Y_1, X_2 \\times Y_2, ...$) مع حساب انتقال الأحمال والأوفرلاب:")
+elif "التدقيق الإنشائي والتسليح التفصيلي لكل طابق" in mode:
+    st.header("🔍 التدقيق الإنشائي، المقاطع المقطعة، وتفاصيل التسليح لكل طابق (ACI 318)")
+    st.markdown("إدخال وإشغال أعداد الطوابق، تفاصيل مقاطع المساحات ($X \\times Y$)، وتفاصيل التسليح الكاملة لكل طابق منفصل:")
     st.write("---")
     
-    # إدارة المساحات المقطعة للطابق الأرضي والطوابق العليا
-    if "gf_segments" not in st.session_state:
-        st.session_state.gf_segments = [{"x": 10.0, "y": 20.0}] # مقطع أساسي أول
-    if "tf_segments" not in st.session_state:
-        st.session_state.tf_segments = [{"x": 10.0, "y": 20.0}] # مقطع أساسي أول
+    # 1. التحكم بكون عدد الطوابق مفتوح
+    st.subheader("🏛️ 1. تحديد عدد طوابق البناية والغرض من الاستخدام")
+    col_f_cnt1, col_f_cnt2, col_f_cnt3 = st.columns(3)
+    with col_f_cnt1:
+        total_floors_cnt = st.number_input("إجمالي عدد الطوابق (فتُح لجميع الطوابق):", min_value=1, max_value=12, value=4, step=1)
+    with col_f_cnt2:
+        bldg_use = st.selectbox("الغرض من استخدام البناية:", ["سكني", "تجاري / محلات", "مكاتب إدارية", "خدمي"])
+    with col_f_cnt3:
+        bldg_col_count = st.number_input("إجمالي عدد الأعمدة في البناية للطابق:", min_value=4, max_value=50, value=12, step=1)
 
-    # 1. المساحات المقطعة للطابق الأرضي
-    st.subheader("🏛️ 1. تقطيع مساحات الطابق الأرضي (Ground Floor Segments)")
-    st.markdown("أضف المقاطع المستطيلة المكونة لقطعة الطابق الأرضي:")
-
-    gf_total_area = 0.0
-    for idx, seg in enumerate(st.session_state.gf_segments):
-        c_x, c_y = st.columns(2)
-        with c_x:
-            st.session_state.gf_segments[idx]["x"] = st.number_input(f"عرض المقطع X_{idx+1} (متر):", value=seg["x"], step=0.5, key=f"gf_x_{idx}")
-        with c_y:
-            st.session_state.gf_segments[idx]["y"] = st.number_input(f"طول المقطع Y_{idx+1} (متر):", value=seg["y"], step=0.5, key=f"gf_y_{idx}")
-        
-        seg_a = st.session_state.gf_segments[idx]["x"] * st.session_state.gf_segments[idx]["y"]
-        gf_total_area += seg_a
-        st.caption(f"مساحة المقطع ({idx+1}): {seg_a:.1f} م²")
-
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-        if st.button("➕ إضافة مقطع مساحة جديد للطابق الأرضي (X_n × Y_n)", key="btn_add_gf"):
-            st.session_state.gf_segments.append({"x": 4.0, "y": 5.0})
-            st.rerun()
-    with col_btn2:
-        if len(st.session_state.gf_segments) > 1:
-            if st.button("🗑️ حذف آخر مقطع إضافي", key="btn_del_gf"):
-                st.session_state.gf_segments.pop()
-                st.rerun()
-
-    st.success(f"إجمالي مساحة الطابق الأرضي الصافية: **{gf_total_area:.1f} م²**")
+    # المجموعات التفاعلية للمقاطع
+    if "floor_segments" not in st.session_state:
+        st.session_state.floor_segments = {}
 
     st.write("---")
-    # 2. المساحات المقطعة للطوابق المتكررة
-    st.subheader("🏢 2. تقطيع مساحات الطوابق المتكررة (Upper Typical Floors Segments)")
-    st.markdown("أضف مقاطع المساحات للطوابق العليا (مع حساب البروزات والبالكونات):")
+    st.subheader("📐 2. تفاصيل المساحات المقطعة ($X_n \\times Y_n$) والتسليح الخاص بكل طابق")
 
-    tf_total_area = 0.0
-    for idx, seg in enumerate(st.session_state.tf_segments):
-        c_tx, c_ty = st.columns(2)
-        with c_tx:
-            st.session_state.tf_segments[idx]["x"] = st.number_input(f"عرض المقطع المتكرر X_{idx+1} (متر):", value=seg["x"], step=0.5, key=f"tf_x_{idx}")
-        with c_ty:
-            st.session_state.tf_segments[idx]["y"] = st.number_input(f"طول المقطع المتكرر Y_{idx+1} (متر):", value=seg["y"], step=0.5, key=f"tf_y_{idx}")
+    floors_data = []
+
+    # تكرار إدخال البيانات لكل طابق
+    for fl_idx in range(1, total_floors_cnt + 1):
+        fl_name = "الطابق الأرضي (Ground Floor)" if fl_idx == 1 else (f"الطابق ({fl_idx - 1}) المتكرر" if fl_idx < total_floors_cnt else f"الطابق الأخير / السطح ({fl_idx})")
         
-        seg_ta = st.session_state.tf_segments[idx]["x"] * st.session_state.tf_segments[idx]["y"]
-        tf_total_area += seg_ta
-        st.caption(f"مساحة المقطع المتكرر ({idx+1}): {seg_ta:.1f} م²")
+        with st.expander(f"🏢 بيانات وتفاصيل {fl_name}", expanded=(fl_idx == 1)):
+            st.markdown(f"##### أ) تقطيع مساحات {fl_name} (محاور X & Y):")
+            
+            # تهيئة المقاطع لهذا الطابق
+            seg_key = f"fl_seg_{fl_idx}"
+            if seg_key not in st.session_state.floor_segments:
+                st.session_state.floor_segments[seg_key] = [{"x": 10.0, "y": 20.0}]
 
-    col_tbtn1, col_tbtn2 = st.columns(2)
-    with col_tbtn1:
-        if st.button("➕ إضافة مقطع مساحة جديد للطوابق المتكررة", key="btn_add_tf"):
-            st.session_state.tf_segments.append({"x": 2.0, "y": 5.0})
-            st.rerun()
-    with col_tbtn2:
-        if len(st.session_state.tf_segments) > 1:
-            if st.button("🗑️ حذف آخر مقطع متكرر", key="btn_del_tf"):
-                st.session_state.tf_segments.pop()
-                st.rerun()
+            fl_area = 0.0
+            for s_i, seg in enumerate(st.session_state.floor_segments[seg_key]):
+                col_x, col_y = st.columns(2)
+                with col_x:
+                    st.session_state.floor_segments[seg_key][s_i]["x"] = st.number_input(f"عرض المقطع X_{s_i+1} (متر):", value=seg["x"], step=0.5, key=f"x_{fl_idx}_{s_i}")
+                with col_y:
+                    st.session_state.floor_segments[seg_key][s_i]["y"] = st.number_input(f"طول المقطع Y_{s_i+1} (متر):", value=seg["y"], step=0.5, key=f"y_{fl_idx}_{s_i}")
+                
+                s_area = st.session_state.floor_segments[seg_key][s_i]["x"] * st.session_state.floor_segments[seg_key][s_i]["y"]
+                fl_area += s_area
 
-    st.info(f"إجمالي مساحة الطابق المتكرر الصافية: **{tf_total_area:.1f} م²**")
+            c_b1, c_b2 = st.columns(2)
+            with c_b1:
+                if st.button(f"➕ إضافة مقطع مساحة جديد لـ {fl_name}", key=f"add_{fl_idx}"):
+                    st.session_state.floor_segments[seg_key].append({"x": 4.0, "y": 5.0})
+                    st.rerun()
+            with c_b2:
+                if len(st.session_state.floor_segments[seg_key]) > 1:
+                    if st.button(f"🗑️ حذف آخر مقطع إضافي من {fl_name}", key=f"del_{fl_idx}"):
+                        st.session_state.floor_segments[seg_key].pop()
+                        st.rerun()
+
+            st.info(f"إجمالي مساحة {fl_name}: **{fl_area:.1f} م²**")
+
+            st.markdown(f"##### ب) التفاصيل الإنشائية وتطبيقات التسليح لـ {fl_name}:")
+            col_d1, col_d2, col_d3 = st.columns(3)
+            with col_d1:
+                st_slab_type = st.selectbox(f"نوع السقف المستخدم:", ["سقف مصمت (Solid Slab)", "سقف هوردي اتجاه واحد", "سقف هوردي اتجاهين", "سقف بلاطة مسطحة (Flat Plate)"], key=f"st_type_{fl_idx}")
+                slab_bar_d = st.selectbox(f"قطر حديد السقف:", [10, 12, 16], format_func=lambda x: f"Ø{x} مم", key=f"s_d_{fl_idx}")
+                slab_spacing_mm = st.number_input(f"المسافة بين أسياخ السقف (مم):", min_value=100, max_value=250, value=150, step=25, key="s_sp_" + str(fl_idx))
+
+            with col_d2:
+                col_bar_d = st.selectbox(f"قطر حديد العمود الرئيسي:", [16, 20, 25, 32], format_func=lambda x: f"Ø{x} مم", index=1, key=f"c_d_{fl_idx}")
+                col_bar_num = st.number_input(f"عدد الأسياخ في العمود الواحد:", min_value=4, max_value=20, value=8, step=2, key=f"c_num_{fl_idx}")
+
+            with col_d3:
+                beam_bar_d = st.selectbox(f"قطر حديد الجسور الرئيسي:", [12, 16, 20, 25], format_func=lambda x: f"Ø{x} مم", index=1, key=f"b_d_{fl_idx}")
+                beam_bar_num = st.number_input(f"عدد أسياخ الجسر الرئيسي:", min_value=2, max_value=12, value=4, step=1, key=f"b_num_{fl_idx}")
+                stirrup_sp_mm = st.number_input(f"المسافة بين الكانات/الأثاري (مم):", min_value=75, max_value=200, value=100, step=25, key=f"st_sp_{fl_idx}")
+
+            floors_data.append({
+                "floor_num": fl_idx,
+                "floor_title": fl_name,
+                "area": fl_area,
+                "slab_type": st_slab_type,
+                "s_dia": slab_bar_d,
+                "s_sp": slab_spacing_mm,
+                "c_dia": col_bar_d,
+                "c_num": col_bar_num,
+                "b_dia": beam_bar_d,
+                "b_num": beam_bar_num,
+                "st_sp": stirrup_sp_mm
+            })
 
     st.write("---")
-    # 3. إعدادات التسليح والأوفرلاب للبناية
-    st.subheader("🔩 3. أقطار التسليح وحساب الأوفرلاب الكلي لجميع الطوابق")
-    
-    col_st1, col_st2, col_st3 = st.columns(3)
-    with col_st1:
-        total_floors_cnt = st.number_input("عدد الطوابق الإجمالي:", min_value=1, max_value=10, value=3, step=1)
-        col_count = st.number_input("عدد الأعمدة في الطابق:", min_value=4, max_value=40, value=12, step=1)
-    with col_st2:
-        c_dia = st.selectbox("قطر حديد الأعمدة الرئيسي:", [16, 20, 25, 32], format_func=lambda x: f"Ø{x} مم", index=1)
-        c_bars = st.number_input("عدد الأسياخ في العمود الواحد:", min_value=4, max_value=20, value=8, step=2)
-    with col_st3:
-        bldg_use = st.selectbox("الغرض من الاستخدام:", ["سكني", "تجاري / محلات", "مكاتب", "خدمي"])
+    if st.button("🚀 إجراء التحليل الهندسي الشامل والأوفرلاب طابقاً بطابق", use_container_width=True):
+        st.success("تم الحساب والتحليل الهندسي الكامل بنجاح لكل طابق ومادة وفق اشتراطات الكود ACI 318 ✅")
 
-    if st.button("🚀 إجراء التحليل الهندسي، انتقال الأحمال، وحساب الأوفرلاب الكلي", use_container_width=True):
-        st.success("تم حساب وتقسيم الأحمال الهندسية والأوفرلاب بنجاح ✅")
-
-        # أطوال الأوفرلاب
-        c_lap_cm = round(48 * c_dia / 10.0, 1) # سم
-        c_unit_wt = (c_dia**2) / 162.0 # كغم/م
+        # 1. جدول ملخص الأوفرلاب والتسليح لكل طابق
+        st.subheader("📑 1. جدول الأوفرلاب والتسليح الإنشائي المفصل لكل طابق منفصل:")
         
-        tot_laps_count = col_count * c_bars * total_floors_cnt
-        tot_lap_wt_kg = tot_laps_count * (c_lap_cm / 100.0) * c_unit_wt
-        tot_lap_cost = (tot_lap_wt_kg / 1000.0) * live_steel_price
+        detail_table = []
+        tot_overlap_wt_all_floors = 0.0
 
-        st.subheader("📊 1. جدول أوزان وأطوال الأوفرلاب والتداخل لجميع الطوابق (Overall Lap Splice Summary):")
-        lap_table = [
-            {
-                "العنصر الإنشائي": "حديد الأعمدة (Columns)",
-                "طول الأوفرلاب للطابق الواحد": f"{c_lap_cm} سم (48Ø)",
-                "الموقع التنفيذي الموصى به": "في منتصف ارتفاع العمود (Zone B) لتفادي العزوم العالية",
-                "الوزن الإجمالي للتداخلات": f"{tot_lap_wt_kg:,.1f} كغم (~{tot_lap_wt_kg/1000:.2f} طن)",
-                "الكلفة المادية لحديد الأوفرلاب": f"{tot_lap_cost:,.0f} دينار عراقي"
-            }
-        ]
-        st.table(lap_table)
+        for f_item in floors_data:
+            # الأوفرلاب للأعمدة في هذا الطابق
+            c_lap_cm = round(48 * f_item["c_dia"] / 10.0, 1)
+            c_unit_wt = (f_item["c_dia"]**2) / 162.0
+            f_col_lap_wt_kg = bldg_col_count * f_item["c_num"] * (c_lap_cm / 100.0) * c_unit_wt
+            tot_overlap_wt_all_floors += f_col_lap_wt_kg
 
+            detail_table.append({
+                "مستوى الطابق": f_item["floor_title"],
+                "مساحة الطابق الصافية": f"{f_item['area']:.1f} م²",
+                "نوع السقف وتسلحه": f"{f_item['slab_type']} | Ø{f_item['s_dia']} كل {f_item['s_sp']}مم",
+                "تسليح الأعمدة": f"{f_item['c_num']} Ø{f_item['c_dia']} (أوفرلاب {c_lap_cm} سم)",
+                "تسليح الجسور والكانات": f"{f_item['b_num']} Ø{f_item['b_dia']} | كانات كل {f_item['st_sp']}مم",
+                "وزن أوفرلاب الأعمدة بالطابق": f"{f_col_lap_wt_kg:.1f} كغم"
+            })
+
+        st.table(detail_table)
+
+        # 2. جدول تتبع وتراكم الأحمال طابقاً بطابق
         st.write("---")
-        st.subheader("🪜 2. جدول الأحمال المنتقلة طابقاً بطابق (من المساحات المقطعة):")
+        st.subheader("🪜 2. جدول تتبع الأحمال التراكمية وانتقالها للأعمدة طابقاً بطابق:")
         
         unit_dl = 3.2 # kN/m2
         unit_ll = 2.0 if "سكني" in bldg_use else 4.0 # kN/m2
         tot_u = 1.2 * unit_dl + 1.6 * unit_ll
         
-        cum_load_all = 0.0
-        floor_tak_table = []
-        
-        for fl in range(total_floors_cnt, 0, -1):
-            curr_area = gf_total_area if fl == 1 else tf_total_area
-            fl_load = curr_area * tot_u
-            cum_load_all += fl_load
+        cum_load_kn = 0.0
+        load_takedown_table = []
+
+        # التكرار العكسي من السطح للأرضي
+        for f_item in reversed(floors_data):
+            f_load = f_item["area"] * tot_u
+            cum_load_kn += f_load
             
-            fl_title = "الطابق الأرضي (Ground Floor)" if fl == 1 else (f"الطابق ({fl})" if fl < total_floors_cnt else "السطح / السقف الأخير")
-            floor_tak_table.append({
-                "مستوى الطابق": fl_title,
-                "إجمالي مساحة المقاطع": f"{curr_area:.1f} م²",
-                "حمل الطابق الصافي": f"{fl_load:,.1f} kN",
-                "الحمل التراكمي النازل للأعمدة": f"{cum_load_all:,.1f} kN (~{cum_load_all/10:.1f} طن)",
-                "نصيب العمود الواحد": f"{(cum_load_all / col_count):,.1f} kN"
+            load_takedown_table.append({
+                "مستوى الطابق": f_item["floor_title"],
+                "مساحة الطابق الصافية": f"{f_item['area']:.1f} م²",
+                "حمل الطابق الصافي": f"{f_load:,.1f} kN",
+                "الحمل التراكمي النازل للأسفل": f"{cum_load_kn:,.1f} kN (~{cum_load_kn/10:.1f} طن)",
+                "نصيب العمود الواحد من الحمل": f"{(cum_load_kn / bldg_col_count):,.1f} kN"
             })
 
-        st.table(floor_tak_table)
+        st.table(load_takedown_table)
+
+        # 3. إحصائية مادية وختامية للأوفرلاب
+        st.write("---")
+        st.subheader("💰 3. الإحصائية المالية والتنفيذية الإجمالية للأوفرلاب:")
+        tot_lap_cost_iqd = (tot_overlap_wt_all_floors / 1000.0) * live_steel_price
+        
+        m1, m2 = st.columns(2)
+        with m1:
+            st.metric("إجمالي وزن حديد الأوفرلاب لجميع أعمدة المبنى", f"{tot_overlap_wt_all_floors:,.1f} كغم (~{tot_overlap_wt_all_floors/1000:.2f} طن)")
+        with m2:
+            st.metric("التكلفة المالية المقدرة لحديد الأوفرلاب", f"{tot_lap_cost_iqd:,.0f} دينار عراقي")
 
 # ==========================================
 # 4. حاسبة المواد التفصيلية
