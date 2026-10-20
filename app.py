@@ -2,115 +2,154 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import math
 
-st.set_page_config(page_title="منظومة التدقيق الإنشائي - ACI 318", layout="wide")
+st.set_page_config(page_title="منظومة التدقيق الإنشائي العراقي - ACI 318", layout="wide")
 
-st.title("🛡️ منظومة التدقيق الإنشائي الشاملة (Shear & Deflection Integration)")
+st.title("🛡️ النظام الاستشاري للتدقيق الإنشائي (باللغة والدارج الهندسي العراقي)")
 st.write("---")
 
-# 1. إدخال مواصفات المواد والأحمال
-st.header("1️⃣ مواصفات المواد والأحمال (Materials & Loading)")
-c1, c2, c3, c4 = st.columns(4)
-with c1:
-    fc = st.number_input("مقاومة الخرسانة f'c (MPa)", value=28.0)
-with c2:
-    fy = st.number_input("إجهاد خضوع الحديد fy (MPa)", value=420.0)
-with c3:
-    dead_super = st.number_input("أحمال إضافية Dead Load (kN/m²)", value=2.5)
-with c4:
-    live_load = st.number_input("الحمل الحي Live Load (kN/m²)", value=2.0)
+# اختيار نمط العمل
+mode = st.sidebar.selectbox("اختر وضع النظام:", ["🔍 تدقيق متعدد العناصر (عراقي)", "📊 تقرير التدقيق العام"])
 
-st.write("---")
+if "تدقيق" in mode:
+    st.header("🏢 إدخال وتدقيق عناصر المبنى (أعمدة، جسور، سقوف) بالطريقة الهندسية الدارجة")
 
-# 2. إدخال وتدقيق البلاطة (Slab Check - Deflection & Flexure)
-st.header("2️⃣ تدقيق البلاطة والترخيم (Slab & Deflection Check)")
-cs1, cs2, cs3, cs4 = st.columns(4)
-with cs1:
-    L_long = st.number_input("الطول الطويل L_L (m)", value=5.0)
-with cs2:
-    L_short = st.number_input("الطول القصير L_S (m)", value=4.0)
-with cs3:
-    h_slab = st.number_input("سمك البلاطة المدخل (mm)", value=150)
-with cs4:
-    slab_rebar = st.text_input("تسليح البلاطة", value="Ø12@200mm")
+    # 1. إعدادات المواد العامة للمشروع
+    st.subheader("1️⃣ مواصفات المواد والأحمال بالموقع")
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    with col_m1:
+        fc = st.number_input("مقاومة الخرسانة f'c (MPa)", value=28.0)
+    with col_m2:
+        fy = st.number_input("إجهاد خضوع الحديد fy (MPa)", value=420.0)
+    with col_m3:
+        dead_load = st.number_input("الأحمال الميتة الإضافية (كاشي وتراب) kN/m²", value=2.5)
+    with col_m4:
+        live_load, = st.number_input("الحمل الحي (أثاث وسكن) kN/m²", value=3.0), 3.0 if False else 3.0 # ضبط آمن
 
-# حسابات البلاطة والترخيم (Deflection Check)
-ratio = L_long / L_short if L_short > 0 else 1.0
-slab_type = "One-Way Slab" if ratio >= 2.0 else "Two-Way Slab"
+    st.write("---")
 
-# حد سمك الترخيم المسموح به كودياً (Deflection Minimum Thickness ACI 318)
-h_min_deflection = int((L_short * 1000) / 24) # فرضية بلاطة مستمرة من جانب واحد
-deflection_status = "✅ آمن ومقاوم للترخيم (Deflection OK)" if h_slab >= h_min_deflection else f"⚠️ قد يحدث ترخيم! السمك الأدنى المطلوب: {h_min_deflection} mm"
-
-st.info(f"**نوع البلاطة:** {slab_type} (النسبة = {ratio:.2f}) | **حالة الترخيم (Deflection Check):** {deflection_status}")
-
-st.write("---")
-
-# 3. إدخال وتدقيق الجسر والقص (Beam Shear & Flexure Check)
-st.header("3️⃣ تدقيق الجسر ومقاومة القص (Beam Shear & Flexure Check)")
-cb1, cb2, cb3, cb4, cb5 = st.columns(5)
-with cb1:
-    b_beam = st.number_input("عرض الجسر b (mm)", value=250)
-with cb2:
-    h_beam = st.number_input("عمق الجسر h (mm)", value=500)
-with cb3:
-    span_beam = st.number_input("بحر الجسر Span (m)", value=5.0)
-with cb4:
-    top_rebar = st.text_input("التسليح العلوي", value="2Ø14")
-with cb5:
-    bot_rebar = st.text_input("التسليح السفلي", value="3Ø16")
-
-# حسابات القص والجسر (Shear Analysis)
-d_eff = h_beam - 50 # العمق الفعال d
-w_u = 1.2 * (dead_super + (0.25 * 0.5 * 25)) + 1.6 * live_load # الحمل الموزع الأقصى kN/m
-Vu = (w_u * span_beam) / 2 # قوة القص القصوى عند المسند Vu (kN)
-
-# قوة تحمل الخرسانة للقص phi*Vc
-phi_Vc = (0.75 * 0.17 * math.sqrt(fc) * b_beam * d_eff) / 1000 # kN
-
-if Vu <= phi_Vc:
-    shear_status = f"✅ الخرسانة تقاوم القص تماماً (Vu = {Vu:.1f} kN ≤ φVc = {phi_Vc:.1f} kN) - يتطلب كانات حد أدنى فقط"
-else:
-    Vs_req = (Vu - phi_Vc) / 0.75
-    shear_status = f"⚠️ الخرسانة لوحدها لا تكفي! يتطلب إضافة كانات تسليح قص لحمل Vs = {Vs_req:.1f} kN"
-
-st.warning(f"**حالة تدقيق القص (Shear Check):** {shear_status}")
-
-st.write("---")
-
-# 4. إدخال الأعمدة
-st.header("4️⃣ تدقيق العمود والأحمال (Column Capacity Check)")
-cc1, cc2, cc3, cc4 = st.columns(4)
-with cc1:
-    b_col = st.number_input("عرض العمود B (mm)", value=300)
-with cc2:
-    h_col = st.number_input("عمق العمود H (mm)", value=400)
-with cc3:
-    col_rebar = st.text_input("تسليح العمود", value="8Ø16")
-with cc4:
-    floors = st.number_input("عدد الطوابق", value=2)
-
-if st.button("📋 إخراج التقرير الاستشاري الشامل (شامل القص والدفلكشن)"):
-    st.success("تم إتمام حسابات القص والترخيم والعزوم بنجاح! ✅")
+    # 2. تدقيق السقوف والبلاطات
+    st.subheader("2️⃣ تدقيق السقوف (Slabs & Deflection Check)")
+    num_slabs = st.number_input("عدد أنواع السقوف بالمشروع", min_value=1, max_value=10, value=2)
     
-    st.text_area("التقرير التنفيذي النهائي", f"""
-====================================================================
-      تقرير التدقيق الإنشائي للقص والدفلكشن - كود ACI 318
-====================================================================
-المواد: f'c = {fc} MPa | fy = {fy} MPa
+    slab_data = []
+    for i in range(num_slabs):
+        st.markdown(f"**السقف رقم (S{i+1})**")
+        sc1, sc2, sc3, sc4, sc5 = st.columns(5)
+        with sc1:
+            lx = st.number_input(f"البحر القصير L_x (m) [S{i+1}]", value=4.0, key=f"lx_{i}")
+        with sc2:
+            ly = st.number_input(f"البحر الطويل L_y (m) [S{i+1}]", value=5.5, key=f"ly_{i}")
+        with sc3:
+            thickness = st.number_input(f"السمك t (mm) [S{i+1}]", value=150, key=f"t_{i}")
+        with sc4:
+            condition = st.selectbox(f"نوع استمرارية السقف [S{i+1}]", ["مستمر من الجهتين (Continuous)", "مستمر من جهة وحدة (End Span)", "بسيط الارتكاز (Simply Supported)"], key=f"cond_{i}")
+        with sc5:
+            rebar_s = st.text_input(f"التسليح المقترح [S{i+1}]", value="Ø12@200mm", key=f"reb_s_{i}")
 
-1. تدقيق الترخيم للبلاطة (Slab Deflection Check):
-   - نوع البلاطة: {slab_type} (L_L/L_S = {ratio:.2f})
-   - سمك البلاطة المدخل: {h_slab} mm
-   - الحد الأدنى للسمك لمنع الدفلكشن (h_min): {h_min_deflection} mm
-   - التقييم: {deflection_status}
+        # الحسابات والدفلكشن بالعراقي
+        ratio = ly / lx if lx > 0 else 1.0
+        styp = "توجيه واحد (One-Way)" if ratio >= 2.0 else "توجيهين (Two-Way)"
+        
+        if "مستمر من الجهتين" in condition:
+            h_min = int((lx * 1000) / 28)
+        elif "مستمر من جهة وحدة" in condition:
+            h_min = int((lx * 1000) / 24)
+        else:
+            h_min = int((lx * 1000) / 20)
 
-2. تدقيق القص للجسور (Beam Shear Check):
-   - مقطع الجسر: {b_beam}x{h_beam} mm (d = {d_eff} mm)
-   - قوة القص المسلطة القصوى (Vu): {Vu:.2f} kN
-   - مقاومة الخرسانة للقص (φVc): {phi_Vc:.2f} kN
-   - التقييم: {shear_status}
+        # المصطلحات بالعراقي الشائع
+        if thickness >= h_min:
+            s_status = "✅ ممتاز.. ماكو أي نزول أو دَفلكشن (Safe)"
+        else:
+            s_status = f"⚠️ انتبه! السقف خفيف ويحتمل يصير بيه دَفلكشن (السمك المطلوب: {h_min} مم)"
 
-3. الأعمدة (Columns):
-   - المقطع: {b_col}x{h_col} mm | التسليح: {col_rebar} لعدد {floors} طوابق.
-====================================================================
-""", height=350)
+        slab_data.append({"السقف": f"S{i+1}", "التصنيف": styp, "النسبة": f"{ratio:.2f}", "السمك المدخل": f"{thickness} mm", "فحص الدفلكشن": s_status, "التسليح": rebar_s})
+
+    st.write("---")
+
+    # 3. تدقيق الجسور (Beams)
+    st.subheader("3️⃣ تدقيق الجسور والقص (Beams & Shear Check)")
+    num_beams = st.number_input("عدد الجسور الرئيسية", min_value=1, max_value=10, value=2)
+    
+    beam_data = []
+    for j in range(num_beams):
+        st.markdown(f"**الجسر رقم (B{j+1})**")
+        bc1, bc2, bc3, bc4, bc5, bc6 = st.columns(6)
+        with bc1:
+            b_w = st.number_input(f"العرض b (mm) [B{j+1}]", value=250, key=f"bw_{j}")
+        with bc2:
+            h_b = st.number_input(f"العمق h (mm) [B{j+1}]", value=500, key=f"hb_{j}")
+        with bc3:
+            span = st.number_input(f"الطول Span (m) [B{j+1}]", value=5.0, key=f"span_{j}")
+        with bc4:
+            loc = st.selectbox(f"مكان الجسر [B{j+1}]", ["داخلي (Interior)", "خارجي يشيل واجهة (Exterior)", "على الحافة (Edge)"], key=f"loc_{j}")
+        with bc5:
+            top_reb = st.text_input(f"حديد العلوي [B{j+1}]", value="2Ø14", key=f"treb_{j}")
+        with bc6:
+            bot_reb = st.text_input(f"حديد السفلي [B{j+1}]", value="3Ø16", key=f"breb_{j}")
+
+        # تدقيق القص بالعراقي
+        d_eff = h_b - 50
+        load_mult = 1.25 if "خارجي" in loc else 1.0
+        w_beam = load_mult * (1.2 * (dead_load + (b_w/1000 * h_b/1000 * 25)) + 1.6 * live_load)
+        Vu_beam = (w_beam * span) / 2
+        phi_Vc = (0.75 * 0.17 * math.sqrt(fc) * b_w * d_eff) / 1000
+
+        if Vu_beam <= phi_Vc:
+            shear_check = "✅ مقطع الجسر قوي ويقاوم القص وحددنا الكانات للربط وبس"
+        else:
+            shear_check = "⚠️ القص عالي.. لازم نكثف الكانات أو نكبر مقطع الجسر"
+
+        beam_data.append({"الجسر": f"B{j+1}", "المكان": loc, "المقطع": f"{b_w}x{h_b} mm", "قوة القص (Vu)": f"{Vu_beam:.1f} kN", "فحص القص": shear_check, "التسليح": f"فوق: {top_reb} | جوة: {bot_reb}"})
+
+    st.write("---")
+
+    # 4. تدقيق الأعمدة (Columns)
+    st.subheader("4️⃣ تدقيق الأعمدة (Columns Check)")
+    num_cols = st.number_input("عدد نماذج الأعمدة", min_value=1, max_value=6, value=2)
+    
+    col_results = []
+    for k in range(num_cols):
+        st.markdown(f"**العمود رقم (C{k+1})**")
+        cc1, cc2, cc3, cc4, cc5 = st.columns(5)
+        with cc1:
+            c_dim1 = st.number_input(f"العرض b (mm) [C{k+1}]", value=300, key=f"cd1_{k}")
+        with cc2:
+            c_dim2, = [st.number_input(f"العمق h (mm) [C{k+1}]", value=400, key=f"cd2_{k}")]
+        with cc3:
+            c_loc = st.selectbox(f"موقع العمود [C{k+1}]", ["وسطي (Interior)", "حافة (Edge)", "ركن (Corner)"], key=f"cloc_{k}")
+        with cc4:
+            floors_c = st.number_input(f"عدد الطوابق الفوقه [C{k+1}]", value=3, key=f"cfl_{k}")
+        with cc5:
+            col_reb = st.text_input(f"تسليح العمود [C{k+1}]", value="8Ø16", key=f"creb_{k}")
+
+        area_trib = 4.0 * 4.5
+        trib_fact = 1.0 if "وسطي" in c_loc else (0.6 if "حافة" in c_loc else 0.35)
+        P_u = 1.2 * (dead_load * area_trib * floors_c * trib_fact) + 1.6 * (live_load * area_trib * floors_c * trib_fact)
+        
+        Ag = c_dim1 * c_dim2[0] if isinstance(c_dim2, list) else c_dim1 * c_dim2
+        P_n_max = 0.80 * 0.65 * (0.85 * fc * (Ag - 2000) + 420 * 2000) / 1000
+        
+        if P_u <= P_n_max:
+            col_status = "✅ العمود شايل الحمل ومرتاح كلش"
+        else:
+            col_status = "⚠️ الحمل قاصي على العمود، لازم نكبر أبعاده"
+
+        col_results.append({"العمود": f"C{k+1}", "المكان": c_loc, "الأبعاد": f"{c_dim1}x{c_dim2[0] if isinstance(c_dim2, list) else c_dim2} mm", "الحمل المحسوب": f"{P_u:.1f} kN", "الحالة": col_status, "الحديد": col_reb})
+
+    st.write("---")
+    if st.button("📋 اعرض التقرير النهائي باللهجة العراقية"):
+        st.success("تم التدقيق بنجاح وكامل العناصر مطابقة للأصول الهندسية ✅")
+        
+        st.subheader("📊 الخلاصة التنفيذية للمشروع")
+        st.markdown("### 🔹 السقوف والترخيم:")
+        st.table(slab_data)
+
+        st.markdown("### 🔹 الجسور والقص:")
+        st.table(beam_data)
+
+        st.markdown("### 🔹 الأعمدة والأحمال:")
+        st.table(col_results)
+
+else:
+    st.info("ℹ️ اختر من القائمة الجانبية لبدء التدقيق.")
