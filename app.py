@@ -313,7 +313,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
             floor_total_steel_ton = 0.0
 
             for sp_i in range(1, int(num_spaces) + 1):
-                # تعيين الرموز التسلسلية بدقة S1, B1, C1 ثم S2, B2, C2 وهكذا
                 s_tag = f"S{sp_i}"
                 b_tag = f"B{sp_i}"
                 c_tag = f"C{sp_i}"
@@ -332,21 +331,18 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
                 sp_area = round(sp_x * sp_y, 2)
                 st.caption(f"📐 مساحة الفضاء {s_tag}: {sp_area} م²")
 
-                # الشبكة السفلية
                 st.markdown(f"🔻 **الشبكة السفلية لـ {s_tag} (العزم الموجب):**")
                 b_col1, b_col2, b_col3 = st.columns(3)
                 with b_col1: bot_n = st.number_input(f"عدد شيش سفلي {s_tag}", 1, 10, 2, key=f"bn_{fl_idx}_{sp_i}")
                 with b_col2: bot_d = st.selectbox(f"قطر سفلي {s_tag}", ALL_BAR_DIAMETERS, index=2, format_func=lambda x: f"Ø{x} مم", key=f"bd_{fl_idx}_{sp_i}")
                 with b_col3: bot_sp = st.number_input(f"المسافة مم سفلي {s_tag}", value=150, step=25, key=f"bsp_{fl_idx}_{sp_i}")
 
-                # الشبكة العلوية
                 st.markdown(f"🔺 **الشبكة العلوية لـ {s_tag} (العزم السالب وتكسيح الشبون):**")
                 t_col1, t_col2, t_col3 = st.columns(3)
                 with t_col1: top_n = st.number_input(f"عدد شيش علوي {s_tag}", 1, 10, 2, key=f"tn_{fl_idx}_{sp_i}")
                 with t_col2: top_d = st.selectbox(f"قطر علوي {s_tag}", ALL_BAR_DIAMETERS, index=1, format_func=lambda x: f"Ø{x} مم", key=f"td_{fl_idx}_{sp_i}")
                 with t_col3: top_sp = st.number_input(f"المسافة مم علوي {s_tag}", value=200, step=25, key=f"tsp_{fl_idx}_{sp_i}")
 
-                # تسليح الجسر والأعمدة المرتبطة بالتسلسل الجديد (B1, C1 إلخ)
                 st.markdown(f"🌉 **تسليح الجسر [{b_tag}] والأعمدة [{c_tag}] المرتبطة بـ {s_tag}:**")
                 bc_1, bc_2, cc_1, cc_2 = st.columns(4)
                 with bc_1: beam_n = st.number_input(f"عدد شيش جسر {b_tag}", 2, 12, 4, key=f"beamn_{fl_idx}_{sp_i}")
