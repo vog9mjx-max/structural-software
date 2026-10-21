@@ -1,6 +1,6 @@
 import streamlit as st
 
-# استدعاء المحركات الجديدة
+# استدعاء المحركات الميدانية المحدثة
 try:
     from sci_engine import render_sci_module
     from curing_engine import render_curing_module
@@ -11,7 +11,9 @@ except ImportError:
 
 st.set_page_config(page_title="المنظومة الهندسية الاستشارية - م. محمد ذنون", layout="wide")
 
-# تخصيص واجهة CSS
+# ==========================================
+# تخصيص واجهة CSS الفاخرة
+# ==========================================
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl; }
@@ -23,7 +25,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# نظام كلمة السر
+# ==========================================
+# نظام حماية التطبيق بكلمة السر
+# ==========================================
 PASSWORD_KEY = "1234" 
 
 def check_password():
@@ -52,7 +56,9 @@ def check_password():
 if not check_password():
     st.stop()
 
-# العنوان الرئيسي
+# ==========================================
+# العنوان الرئيسي للمنظومة
+# ==========================================
 st.title("🏛️ المنظومة الهندسية الاستشارية المتكاملة")
 st.markdown("### 👨‍💻 إشراف وتطوير: **المهندس محمد ذنون عبد شريف** | جامعة كربلاء")
 st.write("---")
@@ -61,7 +67,7 @@ if st.sidebar.button("🔒 قفل النظام وتسجيل الخروج"):
     st.session_state["password_correct"] = False
     st.rerun()
 
-# القائمة الجانبية الشاملة لجميع الأقسام الـ 9
+# القائمة الجانبية للأقسام الـ 9
 mode = st.sidebar.selectbox(
     "اختر قسم العمل المطلوب:", 
     [
@@ -88,14 +94,28 @@ laborer_daily = st.sidebar.number_input("أجور العامل اليومية (�
 
 prices = {"epoxy_liter": 25000, "grout_kg": 3500, "cement_bag": live_cement_price}
 
-# التوجيه للقسم المطلوب
+# ==========================================
+# التوجيه الحقيقي للملفات والمحركات الفرعية
+# ==========================================
 if "Smart Punch List" in mode:
-    render_punch_list_module()
+    try:
+        render_punch_list_module()
+    except NameError:
+        st.error("⚠️ يرجى التأكد من وجود ملف punch_list_engine.py في المستودع.")
 elif "Subcontractor Daily Log" in mode:
-    render_daily_log_module(laborer_daily, carpenters_daily, steel_fixer_daily)
+    try:
+        render_daily_log_module(laborer_daily, carpenters_daily, steel_fixer_daily)
+    except NameError:
+        st.error("⚠️ يرجى التأكد من وجود ملف daily_log_engine.py في المستودع.")
 elif "Concrete Curing" in mode:
-    render_curing_module()
+    try:
+        render_curing_module()
+    except NameError:
+        st.error("⚠️ يرجى التأكد من وجود ملف curing_engine.py في المستودع.")
 elif "Structural Crack Inspector" in mode:
-    render_sci_module(prices)
+    try:
+        render_sci_module(prices)
+    except NameError:
+        st.error("⚠️ يرجى التأكد من وجود ملف sci_engine.py في المستودع.")
 else:
-    st.info("قم باختيار أحد الأقسام المتاحة من القائمة الجانبية للبدء بالعمل.")
+    st.info("اختر القسم المطلوب من القائمة الجانبية للبدء بالعمل الهندسي.")
