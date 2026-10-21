@@ -3,8 +3,14 @@ import base64
 
 def render_sci_module(prices):
     st.header("🔍 النظام الذكي المتكامل لفحص، تشخيص، ومعالجة التشققات الإنشائية (SCI)")
-    st.markdown("🌐 **وضع التشغيل الميداني (Offline First):** يعمل محلياً في المواقع والطوابق السفلية دون إنترنت:")
+    st.markdown("🌐 **وضع التشغيل الميداني (Offline First):** ارفق صورة الشق وأدخل البيانات للتشخيص الفوري:")
     st.write("---")
+
+    # أداة إرفاق والتقاط صور الشق ميدانياً
+    st.markdown("📷 **إرفاق أو التقاط صورة الشق ميدانياً (Crack Image Upload):**")
+    crack_image = st.file_uploader("اختر صورة الشق من الكاميرا أو الألبوم:", type=["jpg", "jpeg", "png"])
+    if crack_image is not None:
+        st.image(crack_image, caption="معاينة صورة الشق الميدانية المرصودة", use_container_width=True)
 
     col_sci1, col_sci2 = st.columns(2)
     with col_sci1:
@@ -66,4 +72,4 @@ def render_sci_module(prices):
     <p><b>التشخيص:</b> {diagnosis_result}</p><p><b>طريقة الإصلاح:</b> {repair_method}</p>
     </body></html>"""
     b64_sci = base64.b64encode(sci_html.encode('utf-8')).decode()
-    st.markdown(f'<a href="data:text/html;base64,{b64_sci}" download="SCI_Report.html" style="text-decoration: none;"><div style="background-color: #0f172a; color: white; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold;">📄 تحميل تقرير فحص الشق الرسمى (PDF/HTML)</div></a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="data:text/html;base64,{b64_sci}" download="SCI_Report.html" style="text-decoration: none;"><div style="background-color: #0f172a; color: white; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold;">📄 تحميل تقرير فحص الشق الرسمي (PDF/HTML)</div></a>', unsafe_allow_html=True)
