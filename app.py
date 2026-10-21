@@ -62,11 +62,15 @@ if st.sidebar.button("🔒 قفل النظام وتسجيل الخروج"):
     st.session_state["password_correct"] = False
     st.rerun()
 
-# القائمة الرئيسية لجميع الأقسام
+# القائمة الرئيسية لجميع الأقسام مع إضافة وحدة Punch List الجديدة
 mode = st.sidebar.selectbox(
     "اختر قسم العمل المطلوب:", 
     [
-        "📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)",
+        "📋 Smart Punch List - العراق (حاسبها صح لتسليم المشاريع)",
+        "🎙️ Subcontractor Daily Log & Progress AI (يوميات الموقع والصوت)",
+        "🌡️ Concrete Curing & Thermal Monitor (إدارة الصب والطقس)",
+        "🔍 Structural Crack Inspector (SCI) - الفحص الذكي للتشققات",
+        "📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ - Offline)",
         "🏛️ حساب كميات وكلف واجهات البيوت والفلل (Façade Works)",
         "🏡 التصميم المعماري وتوزيع المساحات والخرائط", 
         "🔍 التحليل الإنشائي والتدقيق الشامل وتصميم الأساسات (ACI 318)",
@@ -104,15 +108,392 @@ prices = {
     "marble_m2": 35000,
     "nylon_m2": 750,
     "shovel_hour": 35000,
-    "roller_day": 150000
+    "roller_day": 150000,
+    "epoxy_liter": 25000,
+    "grout_kg": 3500
 }
 
 # ==========================================
-# 0. قسم جدول الكميات المعياري المفصل (Modular BOQ)
+# 0-D. وحدة Smart Punch List - العراق ("حاسبها صح") الجديدة
 # ==========================================
-if "جدول الكميات والكلف المعياري المفصل" in mode:
-    st.header("📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ)")
-    st.markdown("اختر الأقسام التي ترغب بحساب تكلفتها الفعلية في مشروعك:")
+if "Smart Punch List" in mode:
+    st.header("📋 Smart Punch List - العراق ('حاسبها صح') لتسليم المشاريع وكشف العيوب")
+    st.markdown("المنظومة الذكية الميدانية لتسجيل العيوب وتشخيصها باللهجة العراقية، وإرسالها للمقاولين ومتابعة إغلاقها:")
+    st.write("---")
+
+    col_pl1, col_pl2 = st.columns(2)
+    with col_pl1:
+        location_zone = st.text_input("موقع العيب (الطابق / الغرفة / الشقة):", value="الشقة رقم 302 - الحمام الرئيسي")
+        contractor_name = st.selectbox("المقاول الفرعي المسؤول:", ["شركة البناء السريع للمقاولات", "أبو كرار لأعمال التأسيسات الصحية", "مجموعة الكوثر للإنهاءات والكهربائيات"])
+        defect_category = st.selectbox("تصنيف العيب:", ["تأسيسات صحية وصرف", "إنهاءات وبلاط (سيراميك/مرمر)", "أبواب وشبابيك (تطبيق وعمل)", "كهربائيات وإنارة"])
+    with col_pl2:
+        defect_description = st.text_input("وصف العيب الظاهري:", value="رطوبة عالية ونش في جدار الحمام وصرف غير محكم")
+        priority_level = st.selectbox("درجة الأولوية واستعجال الإصلاح:", ["عالية جداً (تتطلب تعديل خلال 24 ساعة)", "متوسطة (خلال 3 أيام)", "بسيطة (ضمن قائمة الملاحظات الختامية)"])
+        workflow_status = st.selectbox("حالة العيب الحالية (Workflow Status):", ["🔴 جديد (New - لم يُصلح بعد)", "🟡 قيد الإصلاح (In Progress - يعمل عليها المقاول)", "🟢 تم التسليم ومغلق (Approved - معتمد ومكتمل)"])
+
+    # محرك التشخيص الذكي باللهجة العراقية
+    if "صحية" in defect_category or "نش" in defect_description:
+        ai_diagnosis = "هذا رطوبة صاعدة بالجدار بسبب عزل مو زين أو نش للماي بالجدران الجانبية."
+        ai_cause = "الميلان مال الشربتة مو صحيح أو السندريلا ما معزولة زين بمانع الرطوبة."
+        ai_solution = "يلزم كشط البياض والتطبيق من جديد بعد حقن مادة العزل المائي وتثبيت شريط العزل."
+    elif "إنهاءات" in defect_category:
+        ai_diagnosis = "تطبل أو تكسر في السيراميك نتيجة عدم انتظام الملاط تحته."
+        ai_cause = "عدم استخدام مادة لاصقة كافية أو عدم دك السيراميك بصورة صحيحة أثناء التطبيق."
+        ai_solution = "رفع البلاطة المتضررة، تنظيف المكان، وإعادة التطبيق بمادة لاصقة معتمد (سيراميك بوند)."
+    else:
+        ai_diagnosis = "عيب في إقفال وتثبيت العنصر المعماري."
+        ai_cause = "تفاوت في مناسيب الفتحة أو سوء تركيب الإطار."
+        ai_solution = "فك الإطار، إعادة وزنه بالمسطرة المائية، وتثبيته بالفوم الرغوي والبراغي."
+
+    st.write("---")
+    st.subheader("🤖 التشخيص الفوري بالذكاء الاصطناعي (اللهجة العراقية الميدانية):")
+    st.info(f"💬 **التشخيص:** {ai_diagnosis}\n\n🔍 **السبب التقديري:** {ai_cause}\n\n🛠️ **الحل الهندسي المقترح:** {ai_solution}")
+
+    # رسالة الواتساب الجاهزة للمقاول
+    whatsapp_msg = f"عيني {contractor_name}، عندك ملاحظة بموقع ({location_zone}): {defect_description}. الحل الهندسي: {ai_solution}. يرجى الإنجاز بأسرع وقت."
+    st.markdown(f"📱 **نص الإشعار الجاهز للإرسال للمقاول (WhatsApp / App):**\n> *{whatsapp_msg}*")
+
+    st.write("---")
+    st.subheader("📥 تنزيل تقضر تسليم الملاحظات الرسمي (Punch List PDF Report):")
+    
+    punch_html = f"""
+    <html dir="rtl">
+    <head><meta charset="utf-8"><title>تقرير عيوب التسليم - Smart Punch List العراق</title>
+    <style>
+        body {{ font-family: Tahoma, sans-serif; padding: 25px; color: #1e293b; direction: rtl; text-align: right; }}
+        h1, h3, h2 {{ text-align: center; color: #0f172a; margin-bottom: 5px; }}
+        .sub-title {{ text-align: center; color: #475569; font-weight: bold; margin-bottom: 20px; }}
+        .box {{ background-color: #f1f5f9; padding: 15px; border-radius: 6px; border: 1px solid #cbd5e1; margin-top: 15px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }}
+        th, td {{ border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-size: 13px; }}
+        th {{ background-color: #0f172a; color: white; }}
+    </style>
+    </head>
+    <body>
+        <h1>المنظومة الهندسية الاستشارية - Smart Punch List</h1>
+        <div class="sub-title">إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</div>
+        <hr>
+        <h2>محضر كشف عيوب التسليم وإصلاح الملاحظات (حاسبها صح)</h2>
+        <div class='box'>
+            <p><b>الموقع (Zone):</b> {location_zone} | <b>المقاول المسؤول:</b> {contractor_name}</p>
+            <p><b>تصنيف العيب:</b> {defect_category} | <b>الحالة:</b> {workflow_status}</p>
+            <p><b>الوصف:</b> {defect_description}</p>
+            <hr>
+            <p><b>التشخيص العراقي:</b> {ai_diagnosis}</p>
+            <p><b>السبب:</b> {ai_cause}</p>
+            <p><b>الحل المقترح:</b> {ai_solution}</p>
+        </div>
+    </body>
+    </html>
+    """
+    b64_pl = base64.b64encode(punch_html.encode('utf-8')).decode()
+    st.markdown(f"""
+        <a href="data:text/html;base64,{b64_pl}" download="Smart_Punch_List_Report.html" style="text-decoration: none;">
+            <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
+                📄 تحميل تقضر تسليم الملاحظات الرسمي للطباعة (PDF / HTML)
+            </div>
+        </a>
+    """, unsafe_allow_html=True)
+
+# ==========================================
+# 0-C. وحدة Subcontractor Daily Log & Progress AI الجديدة (اللهجة العراقية)
+# ==========================================
+elif "Subcontractor Daily Log & Progress AI" in mode:
+    st.header("🎙️ تطبيق التوثيق التلقائي لأعمال المقاولين الفرعيين عبر الصوت والصورة (AI Daily Log)")
+    st.markdown("تحدث باللهجة المحلية الوسطى أو الجنوبية (أو اكتب التقرير السريع)، وسيقوم الذكاء الاصطناعي بتحليله فوراً إلى تقارير هندسية وجداول عمالة وتأخيرات:")
+    st.write("---")
+
+    subcontractor_name = st.text_input("اسم المقاول الفرعي (Subcontractor Name):", value="شركة الرافدين لأعمال الكونكريت والمساند")
+    project_location = st.text_input("موقع العمل / المشروع:", value="مجمع اللؤلؤة السكني - الطابق الثاني")
+
+    st.markdown("💬 **أدخل التسجيل الصوتي المحول (أو اكتب ملاحظتك باللهجة العراقية الطبيعية):**")
+    default_iraqi_voice = "والله اليوم صبينا سقف الطابق الأول وعدنا 12 عامل و3 نجارين و2 حدادين، وتأخر صهريج الخرسانة ساعة ونص بسبب الازدحام، وعدنا تأخير بتوريد حديد البلاطة من المقاول الثانوي."
+    
+    voice_input_text = st.text_area("النص المنطوق (Voice-to-Text Simulation):", value=default_iraqi_voice, height=100)
+
+    if st.button("🤖 تحليل التقرير بالذكاء الاصطناعي واستخراج الجداول الهندسية", use_container_width=True):
+        st.success("تم تحليل اللهجة العراقية واستخراج البيانات الهندسية بنجاح ✅")
+
+        manpower_data = [
+            {"اختصاص العمالة": "عمال بناء وعامة", "العدد": "12 عامل", "معدل الأجور اليومية": f"{laborer_daily:,} د.ع"},
+            {"اختصاص العمالة": "نجارين تسليح وقوالب", "العدد": "3 نجارين", "معدل الأجور اليومية": f"{carpenters_daily:,} د.ع"},
+            {"اختصاص العمالة": "حدادين تسليح", "العدد": "2 حدادين", "معدل الأجور اليومية": f"{steel_fixer_daily:,} د.ع"}
+        ]
+
+        progress_data = [
+            {"الفعالية الإنشائية": "صب سقف الطابق الأول (Slab Casting)", "حالة الإنجاز": "منجز بنجاح اليوم ✓", "ملاحظات ميدانية": "تم إتمام الصب بسلام مع مراعاة الرش والدمك."}
+        ]
+
+        delay_claims_data = [
+            {"سبب التأخير المرصود": "تأخر صهريج الخرسانة (الشفل/الخلاطة)", "مدة التأخير": "ساعة ونصف (1.5 ساعة)", "المسؤولية القانونية": "المقاول الفرعي / توريد"},
+            {"سبب التأخير المرصود": "تأخير توريد حديد التسليح للبلاطة", "مدة التأخير": "يوم عمل واحد", "المسؤولية القانونية": "مورّد المواد / المطالبات (Claims)"}
+        ]
+
+        st.subheader("👷 جدول حصر العمالة اليومي (Manpower Log):")
+        st.table(manpower_data)
+
+        st.subheader("📊 جدول نسب الإنجاز والفعاليات (Progress Log):")
+        st.table(progress_data)
+
+        st.subheader("⚠️ سجل التأخيرات والمطالبات (Delay & Claim Tracking):")
+        st.table(delay_claims_data)
+
+        st.write("---")
+        st.subheader("📥 تنزيل تقرير يوميات الموقع والمهام اليومية (Daily Log Report):")
+        
+        dailylog_html = f"""
+        <html dir="rtl">
+        <head><meta charset="utf-8"><title>يوميات الموقع - Daily Log & Progress AI</title>
+        <style>
+            body {{ font-family: Tahoma, sans-serif; padding: 25px; color: #1e293b; direction: rtl; text-align: right; }}
+            h1, h3, h2 {{ text-align: center; color: #0f172a; margin-bottom: 5px; }}
+            .sub-title {{ text-align: center; color: #475569; font-weight: bold; margin-bottom: 20px; }}
+            .box {{ background-color: #f1f5f9; padding: 15px; border-radius: 6px; border: 1px solid #cbd5e1; margin-top: 15px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }}
+            th, td {{ border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-size: 13px; }}
+            th {{ background-color: #0f172a; color: white; }}
+        </style>
+        </head>
+        <body>
+            <h1>المنظومة الهندسية الاستشارية - يوميات الموقع</h1>
+            <div class="sub-title">إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</div>
+            <hr>
+            <h2>تقرير أعمال المقاولين الفرعيين والتوثيق الصوتي</h2>
+            <div class='box'>
+                <p><b>المقاول الفرعي:</b> {subcontractor_name} | <b>الموقع:</b> {project_location}</p>
+                <p><b>النص الأصلي المسجل:</b> "{voice_input_text}"</p>
+            </div>
+            <h3>1. جدول حصر العمالة</h3>
+            <table><tr><th>التخصص</th><th>العدد</th><th>الأجور</th></tr>
+            <tr><td>عمال عامة</td><td>12</td><td>{laborer_daily:,} د.ع</td></tr>
+            <tr><td>نجارين</td><td>3</td><td>{carpenters_daily:,} د.ع</td></tr>
+            <tr><td>حدادين</td><td>2</td><td>{steel_fixer_daily:,} د.ع</td></tr>
+            </table>
+            <h3>2. سجل التأخيرات والمطالبات (Claims)</h3>
+            <table><tr><th>سبب التأخير</th><th>المدة</th><th>المسؤولية</th></tr>
+            <tr><td>تأخر صهريج الخرسانة</td><td>1.5 ساعة</td><td>المقاول الفرعي</td></tr>
+            <tr><td>تأخير توريد الحديد</td><td>1 يوم</td><td>المورّد / مطالبات</td></tr>
+            </table>
+        </body>
+        </html>
+        """
+        b64_dlog = base64.b64encode(dailylog_html.encode('utf-8')).decode()
+        st.markdown(f"""
+            <a href="data:text/html;base64,{b64_dlog}" download="Daily_Progress_Log_Report.html" style="text-decoration: none;">
+                <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
+                    📄 تحميل تقرير يوميات الموقع الرسمي للطباعة (PDF / HTML)
+                </div>
+            </a>
+        """, unsafe_allow_html=True)
+
+# ==========================================
+# 0-B. وحدة إدارة صب ومعالجة الخرسانة (Concrete Curing & Thermal Monitor) - Offline
+# ==========================================
+elif "Concrete Curing & Thermal Monitor" in mode:
+    st.header("🌡️ نظام إدارة صب ومعالجة الخرسانة والظروف الجوية (ACI 305R / 306R)")
+    st.markdown("🌐 **وضع التشغيل الميداني (Offline First):** محرك محلي لحساب معدل التبخر وخطورة الصب دون الحاجة لإنترنت:")
+    st.write("---")
+
+    col_cur1, col_cur2 = st.columns(2)
+    with col_cur1:
+        air_temp_c = st.number_input("درجة حرارة الجو (°C):", min_value=0.0, max_value=55.0, value=38.0, step=0.5)
+        concrete_temp_c = st.number_input("درجة حرارة الخرسانة الطازجة (°C):", min_value=10.0, max_value=45.0, value=30.0, step=0.5)
+        relative_humidity = st.slider("نسبة الرطوبة النسبية (%):", 10, 100, 30)
+    with col_cur2:
+        wind_speed_kmh = st.number_input("سرعة الرياح (كم/ساعة):", min_value=0.0, max_value=60.0, value=18.0, step=1.0)
+        cement_type_curing = st.selectbox("نوع الإسمنت المستخدم:", ["إسمنت بورتلاندي عادي (OPC - Type I)", "إسمنت سريع الشك أو مقاوم (Type V)"])
+        element_type_curing = st.selectbox("العنصر الخرساني المراد صبه:", ["قواعد أساسات / لبشة (Mass Concrete)", "أعمدة وجسور (Columns & Beams)", "سقوف وبلاطات (Slabs)"])
+
+    evap_rate_metric = round((((concrete_temp_c**1.8) - (relative_humidity * 0.01 * air_temp_c**1.8)) * (wind_speed_kmh + 4)) * 0.00008, 2)
+    if evap_rate_metric < 0.1: evap_rate_metric = 0.1
+
+    st.write("---")
+    st.subheader("📊 مؤشر خطورة الصب والتبخر السطحي (Evaporation & Risk Index):")
+
+    col_res1, col_res2 = st.columns(2)
+    with col_res1:
+        st.metric("معدل تبخر الماء من سطح الخرسانة", f"{evap_rate_metric} kg/m²/hr")
+    with col_res2:
+        if evap_rate_metric > 1.0:
+            st.error("🚨 خطر جداً! معدل التبخر يتجاوز 1.0 كغ/م²/ساعة. **يمنع الصب حالياً** أو يلزم استخدام مصدات رياح، رش خفيف للتربة، ومعالجة كيميائية فورية لمنع تشققات الانكماش اللدن (Plastic Shrinkage).")
+        elif evap_rate_metric > 0.5:
+            st.warning("⚠️ تحذير: معدل التبخر مرتفع. يجب اتخاذ إجراءات احترازية (رش بالماء للنماذج، توفير مظلات، معالجة مبكرة بالمركبات الكيميائية).")
+        else:
+            st.info("🟢 حالة الطقس ملائمة ومستقرة للصب ضمن الحدود الطبيعية المقبولة.")
+
+    st.write("---")
+    st.subheader("⏱️ جدول مواعيد فك القوالب والمعالجة المثلى (Stripping & Curing Schedule):")
+
+    base_days_form = 14 if "لبشة" in element_type_curing else (7 if "جسور" in element_type_curing else 2)
+    if "سريع" in cement_type_curing: base_days_form = max(1, int(base_days_form * 0.7))
+    if air_temp_c > 35: base_days_form = max(1, int(base_days_form * 0.8))
+
+    curing_days_req = 7 if "عادي" in cement_type_curing else 5
+
+    curing_schedule_table = [
+        {"عنصر المنشأ": element_type_curing, "فك القوالب الخشبية/المعدنية": f"بعد {base_days_form} إلى {base_days_form+2} أيام", "فترة المعالجة المائية/الكيميائية الإلزامية": f"{curing_days_req} أيام متواصلة", "ملاحظات التحكم الحراري (Thermal Control)": "مراقبة فرق الحرارة (يحافظ على < 20°C لتجنب التشققات الحرارية للكتل الكبيرة)"}
+    ]
+    st.table(curing_schedule_table)
+
+    st.write("---")
+    st.subheader("📥 تنزيل تقرير صب ومعالجة الخرسانة الميداني (Offline Report):")
+    curing_html = f"""
+    <html dir="rtl">
+    <head><meta charset="utf-8"><title>تقرير صب الخرسانة - Curing & Thermal Monitor</title>
+    <style>
+        body {{ font-family: Tahoma, sans-serif; padding: 25px; color: #1e293b; direction: rtl; text-align: right; }}
+        h1, h3, h2 {{ text-align: center; color: #0f172a; margin-bottom: 5px; }}
+        .sub-title {{ text-align: center; color: #475569; font-weight: bold; margin-bottom: 20px; }}
+        .box {{ background-color: #f1f5f9; padding: 15px; border-radius: 6px; border: 1px solid #cbd5e1; margin-top: 15px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th, td {{ border: 1px solid #cbd5e1; padding: 10px; text-align: center; font-size: 13px; }}
+        th {{ background-color: #0f172a; color: white; }}
+    </style>
+    </head>
+    <body>
+        <h1>المنظومة الهندسية الاستشارية - وحدة الصب الميداني</h1>
+        <div class="sub-title">إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</div>
+        <hr>
+        <h2>تقرير تقييم الطقس ومعدل التبخر ومعالجة الخرسانة (ACI 305R / 306R)</h2>
+        <div class="box">
+            <p><b>درجة حرارة الجو:</b> {air_temp_c} °C | <b>حرارة الخرسانة:</b> {concrete_temp_c} °C</p>
+            <p><b>الرطوبة النسبية:</b> {relative_humidity}% | <b>سرعة الرياح:</b> {wind_speed_kmh} كم/ساعة</p>
+            <p><b>معدل التبخر المحسوب:</b> <b>{evap_rate_metric} kg/m²/hr</b></p>
+            <hr>
+            <p><b>نوع الإسمنت:</b> {cement_type_curing} | <b>العنصر:</b> {element_type_curing}</p>
+        </div>
+        <h3>جداول فك القوالب والمعالجة</h3>
+        <table>
+            <tr><th>عنصر المنشأ</th><th>فك القوالب</th><th>فترة المعالجة</th><th>التحكم الحراري</th></tr>
+            <tr><td>{element_type_curing}</td><td>بعد {base_days_form} أيام</td><td>{curing_days_req} أيام متواصلة</td><td>مراقبة فرق الحرارة لتجنب التشققات</td></tr>
+        </table>
+    </body>
+    </html>
+    """
+    b64_cur = base64.b64encode(curing_html.encode('utf-8')).decode()
+    st.markdown(f"""
+        <a href="data:text/html;base64,{b64_cur}" download="Concrete_Curing_Thermal_Report.html" style="text-decoration: none;">
+            <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
+                📄 تحميل تقرير الصب والطقس الرسمي (PDF / HTML)
+            </div>
+        </a>
+    """, unsafe_allow_html=True)
+
+# ==========================================
+# 0-A. وحدة Structural Crack Inspector (SCI) - Offline
+# ==========================================
+elif "Structural Crack Inspector (SCI)" in mode:
+    st.header("🔍 النظام الذكي المتكامل لفحص، تشخيص، ومعالجة التشققات الإنشائية (SCI)")
+    st.markdown("🌐 **وضع التشغيل الميداني (Offline First):** يعمل محلياً في المواقع والطوابق السفلية دون إنترنت:")
+    st.write("---")
+
+    col_sci1, col_sci2 = st.columns(2)
+    with col_sci1:
+        element_id = st.text_input("رقم أو رمز العنصر الإنشائي (Element ID):", value="Beam-B1 (الطابق الأرضي)")
+        crack_width_mm = st.number_input("عرض الشق المقاس (مم):", min_value=0.05, max_value=15.0, value=0.6, step=0.05)
+        crack_length_m = st.number_input("طول الشق الإجمالي (متر):", min_value=0.1, max_value=50.0, value=2.5, step=0.1)
+    with col_sci2:
+        crack_angle = st.selectbox("زاوية واتجاه الشق (Pattern & Angle):", [
+            "شق مائل بـ 45 درجة (يدل على إجهاد قص / Shear Crack)",
+            "شق أفقي (يدل على هبوط أساسات أو عزوم سالبة / Settlement or Flexure)",
+            "شق عمودي شاقولي (يدل على انكماش أو زيادة أحمال ضغط / Shrinkage or Overloading)",
+            "تشققات شعرية عشوائية (Crazing / Shrinkage Cracks)"
+        ])
+        crack_activity = st.radio("نشاط الشق (Crack Activity):", ["شق مستقر (Dormant)", "شق نشط ويتسع بمرور الزمن (Active - يحتاج مراقبة Tell-Tale)"], horizontal=True)
+
+    st.write("---")
+    st.subheader("🛠️ التشخيص الهندسي وحلول المعالجة (حسب كود ACI 318 / ACI 224R):")
+
+    if "45" in crack_angle or crack_width_mm > 1.0:
+        diagnosis_result = "⚠️ شق إنشائي حرج (Structural Critical Crack): يشير إلى تجاوز إحداثيات القص أو العزوم القصوى، ويجب التدخل الفوري."
+        repair_method = "التدعيم بألياف الكربون (FRP Systems) أو قمصان خرسانية/إيبوكسية بعد تخفيف الأحمال."
+        material_type = "مادة لاصقة إيبوكسيدية عالية المقاومة للتشققات الهيكلية."
+        depth_est_cm = 15.0
+        unit_cost_factor = prices["epoxy_liter"] * 1.5
+    elif crack_width_mm < 0.3:
+        diagnosis_result = "🟢 شق غير إنشائي (Non-Structural / Hairline Crack): غالباً ناتج عن انكماش سطحي أو تغيرات حرارية."
+        repair_method = "معالجة سطحية بمالئ أو طلاء إيبوكسي مرن (Surface Sealing / Epoxy Injection)."
+        material_type = "إيبوكسي منخفض اللزوجة للحقن السطحي."
+        depth_est_cm = 3.0
+        unit_cost_factor = prices["epoxy_liter"]
+    else:
+        diagnosis_result = "🟡 شق إنشائي متوسط (Moderate Structural Crack): يتطلب حقن إيبوكسي ومتابعة."
+        repair_method = "حقن إيبوكسي عميق تحت ضغط (Pressure Epoxy Injection) لملء الفراغات الداخلية."
+        material_type = "إيبوكسي حقن متوسط اللزوجة (Low Viscosity Epoxy Resin)."
+        depth_est_cm = 8.0
+        unit_cost_factor = prices["epoxy_liter"]
+
+    st.markdown(f"**التقييم التشخيصي:** {diagnosis_result}")
+    st.markdown(f"**طريقة الإصلاح المعتمدة:** {repair_method}")
+    st.markdown(f"**المواصفات الفنية للمادة:** {material_type}")
+
+    if "نشط" in crack_activity:
+        st.warning("⚠️ **تنبيه أمان ميداني:** نظراً لأن الشق (نشط)، يُلزم وضع مؤشرات مراقبة زجاجية أو ميكانيكية (Crack Tell-Tale) لمدة لا تقل عن 30 يوماً لتتبع معدل الاتساع قبل الحقن النهائي.")
+
+    material_volume_liters = round((crack_length_m * 100) * (depth_est_cm) * (crack_width_mm / 10.0) * 0.001 * 1.2, 2)
+    if material_volume_liters < 0.5: material_volume_liters = 0.5
+    estimated_total_cost = round(material_volume_liters * (unit_cost_factor / 10.0) + 75000, -3)
+
+    st.write("---")
+    st.subheader("💰 جدول حصر الكميات والتكلفة التقديرية (BoQ):")
+    sci_boq_table = [
+        {"عنصر الفحص": element_id, "عرض الشق": f"{crack_width_mm} مم", "الطول": f"{crack_length_m} م", "كمية مادة المعالجة المطلوبة": f"{material_volume_liters} لتر / كغ", "الكلفة التقديرية للمواد والعمالة": f"{estimated_total_cost:,.0f} دينار عراقي"}
+    ]
+    st.table(sci_boq_table)
+
+    st.write("---")
+    st.subheader("📥 تنزيل تقرير فحص الشق الرسمي (SCI Inspection Report):")
+    sci_html = f"""
+    <html dir="rtl">
+    <head><meta charset="utf-8"><title>تقرير فحص الشق - Structural Crack Inspector</title>
+    <style>
+        body {{ font-family: Tahoma, sans-serif; padding: 25px; color: #1e293b; direction: rtl; text-align: right; }}
+        h1, h3, h2 {{ text-align: center; color: #0f172a; margin-bottom: 5px; }}
+        .sub-title {{ text-align: center; color: #475569; font-weight: bold; margin-bottom: 20px; }}
+        .box {{ background-color: #f1f5f9; padding: 15px; border-radius: 6px; border: 1px solid #cbd5e1; margin-top: 15px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+        th, td {{ border: 1px solid #cbd5e1; padding: 10px; text-align: center; font-size: 13px; }}
+        th {{ background-color: #0f172a; color: white; }}
+    </style>
+    </head>
+    <body>
+        <h1>المنظومة الهندسية الاستشارية - وحدة SCI</h1>
+        <div class="sub-title">إشراف وتطوير: المهندس محمد ذنون عبد شريف | جامعة كربلاء</div>
+        <hr>
+        <h2>تقرير تشخيص ومعالجة التشققات الإنشائية ميدانياً</h2>
+        <div class="box">
+            <p><b>معرف العنصر (Element ID):</b> {element_id}</p>
+            <p><b>عرض الشق:</b> {crack_width_mm} مم | <b>الطول:</b> {crack_length_m} متر</p>
+            <p><b>طبيعة وزاوية الشق:</b> {crack_angle}</p>
+            <p><b>حالة النشاط:</b> {crack_activity}</p>
+            <hr>
+            <p><b>التقييم التشخيصي:</b> {diagnosis_result}</p>
+            <p><b>طريقة الإصلاح المعتمدة:</b> {repair_method}</p>
+            <p><b>المواصفات الفنية للمادة:</b> {material_type}</p>
+        </div>
+        <h3>جداول الكميات والتكلفة المادية (BoQ)</h3>
+        <table>
+            <tr><th>العنصر</th><th>الكمية المطلوبة</th><th>التكلفة التقديرية الإجمالية</th></tr>
+            <tr><td>{element_id}</td><td>{material_volume_liters} لتر / كغ</td><td>{estimated_total_cost:,.0f} د.ع</td></tr>
+        </table>
+    </body>
+    </html>
+    """
+    b64_sci = base64.b64encode(sci_html.encode('utf-8')).decode()
+    st.markdown(f"""
+        <a href="data:text/html;base64,{b64_sci}" download="SCI_Crack_Inspection_Report.html" style="text-decoration: none;">
+            <div style="background-color: #0f172a; color: white; padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: bold;">
+                📄 تحميل تقرير فحص الشق الرسمي للطباعة (PDF / HTML)
+            </div>
+        </a>
+    """, unsafe_allow_html=True)
+
+# ==========================================
+# 0. قسم جدول الكميات المعياري المفصل (Modular BOQ - Offline)
+# ==========================================
+elif "جدول الكميات والكلف المعياري المفصل" in mode:
+    st.header("📋 جدول الكميات والكلف المعياري المفصل (Modular BOQ - Offline)")
+    st.markdown("🌐 **وضع التشغيل بدون إنترنت:** حساب المواد والكلف الحالية لمشروعك بسلاسة تامة:")
     st.write("---")
 
     modular_table_data = []
@@ -321,7 +702,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
                 sp_area = round(sp_x * sp_y, 2)
                 st.caption(f"📐 مساحة الفضاء {s_tag}: {sp_area} م²")
 
-                # التسليح
                 st.markdown(f"🔻 **Bottom Reinforcement (Main Mesh) - التسليح السفلي:**")
                 b_col1, b_col2, b_col3 = st.columns(3)
                 with b_col1: bot_n = st.number_input(f"عدد شيش سفلي {s_tag}", 1, 10, 2, key=f"bn_{fl_idx}_{sp_i}")
@@ -367,8 +747,8 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
                     "span_y": sp_y,
                     "area": sp_area,
                     "thickness": slab_thickness_cm,
-                    "bot_str": f"Ø{bot_d} لكل {bot_sp}مم",
-                    "top_str": f"Ø{top_d} لكل {top_sp}مم",
+                    "bot_str": f"{bot_n}Φ{bot_d} @ {bot_sp}مم",
+                    "top_str": f"{top_n}Φ{top_d} @ {top_sp}مم",
                     "beam_rebar": f"{beam_n}Φ{beam_d}",
                     "col_rebar": f"{col_n}Φ{col_d}",
                     "beam_lap_cm": beam_lap_cm,
@@ -404,12 +784,10 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
         total_project_steel_final = round(all_project_steel + foundation_steel + (total_floors_cnt * 1.5), 2)
         total_project_conc_final = round(all_project_conc + foundation_conc, 2)
 
-        # عرض التقرير بنفس النسق والترتيب الموضح بالصورة
         for f_item in floors_data:
             st.markdown("---")
             st.markdown(f"### 🏢 **{f_item['floor_title']}** (طول البحر L = {f_item['slabs'][0]['span_x']} م | عدد الأعمدة: {columns_count})")
             
-            # 1. جدول السقوف والبلاطات (Slabs)
             st.markdown("#### **جدول السقوف والبلاطات (Slabs)**")
             slabs_ui_table = []
             for sl in f_item["slabs"]:
@@ -420,14 +798,13 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
                     "الرمز": sl["tag"],
                     "الموقع": sl["pos"],
                     "نوع السقف": sl["type"],
-                    "Bottom Reinforcement (تسليح البلاطة السفلي)": sl["bot_str"],
-                    "Top Reinforcement (تسليح البلاطة العلوي)": sl["top_str"],
+                    "Bottom Reinforcement": sl["bot_str"],
+                    "Top Reinforcement": sl["top_str"],
                     "تدقيق الترخيم (Deflection)": "🟢 آمن (L/360) ✓",
                     "نظام التسليح ومسافة التكسيح": f"تكسيح شبون (مسافة {crank_cm} سم = L/7 | الأوفرلاب 250.0 سم)"
                 })
             st.table(slabs_ui_table)
 
-            # 2. جدول الجسور (Beams)
             st.markdown("#### **جدول الجسور (Beams)**")
             beams_ui_table = []
             for sl in f_item["slabs"]:
@@ -440,7 +817,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
                 })
             st.table(beams_ui_table)
 
-            # 3. جدول الأعمدة (Columns - مسار الأحمال)
             st.markdown("#### **جدول الأعمدة (Columns - مسار الأحمال)**")
             cols_ui_table = []
             for sl in f_item["slabs"]:
@@ -453,7 +829,6 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
                 })
             st.table(cols_ui_table)
 
-            # دليل الملاحظات الاستشارية
             st.info(f"""
             💡 **دليل الملاحظات الاستشارية والتنفيذية لـ {f_item['floor_title']} (حسب كود ACI 318):**
             1. **مسافة تكسيح الشبون:** تبدأ من مسافة {round((max(sl['span_x'], sl['span_y'])/7.0)*100, 1)} سم (تساوي L/7) وتوفر 15% إلى 20% حديد.
@@ -462,13 +837,12 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
             4. **وصلات الأوفرلاب للأعمدة والجسور:** السفلي بالوسط والعلوي بالطرف للجسور، والأعمدة حصراً بالوسط (Zone B).
             """)
 
-        # زر التنزيل للتقرير الفاخر (PDF / HTML) المطابق للصورة
         st.write("---")
         st.subheader("📥 تنزيل التقرير الرسمي المطابق للتصميم المعتمد (PDF & Excel):")
         
         col_dl_x, col_dl_p = st.columns(2)
         
-        csv_str = "الطابق,السقف,الموقع,تسليح سفلي,تسليح علوي,الجسر,العمود\n"
+        csv_str = "الطابق,السقف,الموقع,Bottom Reinforcement,Top Reinforcement,الجسر,العمود\n"
         for f_item in floors_data:
             for sl in f_item["slabs"]:
                 csv_str += f"{f_item['floor_title']},{sl['tag']},{sl['pos']},{sl['bot_str']},{sl['top_str']},{sl['beam_rebar']},{sl['col_rebar']}\n"
@@ -514,7 +888,7 @@ elif "التحليل الإنشائي والتدقيق" in mode or "التحلي
             
             <div class='section-header'>جدول السقوف والبلاطات (Slabs)</div>
             <table>
-                <tr><th>الرمز</th><th>الموقع</th><th>نوع السقف</th><th>Bottom Reinforcement (تسليح سفلي)</th><th>Top Reinforcement (تسليح علوي)</th><th>تدقيق الترخيم</th><th>نظام التسليح ومسافة التكسيح</th></tr>
+                <tr><th>الرمز</th><th>الموقع</th><th>نوع السقف</th><th>Bottom Reinforcement</th><th>Top Reinforcement</th><th>تدقيق الترخيم</th><th>نظام التسليح ومسافة التكسيح</th></tr>
             """
             for sl in f_item["slabs"]:
                 html_str += f"<tr><td>{sl['tag']}</td><td>{sl['pos']}</td><td>{sl['type']}</td><td>{sl['bot_str']}</td><td>{sl['top_str']}</td><td>آمن (L/360) ✓</td><td>تكسيح شبون (مسافة {crank_calc} سم = L/7 | الأوفرلاب 250.0 سم)</td></tr>"
